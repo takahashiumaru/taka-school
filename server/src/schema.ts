@@ -165,6 +165,14 @@ const STATEMENTS: string[] = [
     CONSTRAINT fk_rep_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
     CONSTRAINT fk_rep_student FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS files (
+    id VARCHAR(100) PRIMARY KEY,
+    mime_type VARCHAR(100) NOT NULL,
+    size INT UNSIGNED NOT NULL,
+    data LONGBLOB NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ]
 
 export async function ensureSchema() {

@@ -67,8 +67,7 @@ app.use("/api/galleries", galleriesRoutes)
 app.use("/api/reports", reportsRoutes)
 app.use("/api/uploads", uploadsRoutes)
 
-const uploadsDir = process.env.VERCEL === "1" ? path.resolve("/tmp", "uploads") : path.resolve(process.cwd(), "uploads")
-app.use("/uploads", express.static(uploadsDir))
+
 
 const webDist = path.resolve(__dirname, "..", "..", "web", "dist")
 if (existsSync(webDist)) {
