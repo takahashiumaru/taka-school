@@ -1,0 +1,174 @@
+import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
+import AppLayout from "../components/AppLayout"
+import {
+  fetchDashboard,
+  getUser,
+  type DashboardStats,
+} from "../lib/api"
+
+export default function DashboardPage() {
+  const user = getUser()
+  const [stats, setStats] = useState<DashboardStats | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    fetchDashboard()
+      .then((s) => mounted && setStats(s))
+      .catch((e) => mounted && setError(e instanceof Error ? e.message : "Gagal memuat data"))
+      .finally(() => mounted && setLoading(false))
+    return () => {
+      mounted = false
+    }
+  }, [])
+
+  if (!user) return null
+
+  const today = new Date().toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  })
+
+  const att = stats?.attendanceToday
+  const spp = stats?.sppThisMonth
+
+  return (
+    <AppLayout>
+      <div className="text-xs text-slate-500">{today}</div>
+      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Dashboard</h1>
+      <p className="text-sm text-slate-600 mt-1">
+        Halo, <span className="font-semibold">{user.name}</span> — ringkasan operasional sekolahmu hari ini.
+      </p>
+
+      {loading && <div className="mt-6 text-slate-500">Memuat data…</div>}
+      {error && (
+        <div className="mt-6 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3">
+          {error}
+        </div>
+      )}
+
+      {stats && (
+        <>
+          <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <Card title="Total Siswa" value={stats.students} sub="aktif" color="from-sky-500 to-sky-700" to="/siswa" />
+            <Card title="Total Guru" value={stats.teachers} sub="aktif" color="from-violet-500 to-violet-700" to="/guru" />
+            <Card title="Jumlah Kelas" value={stats.classes} sub="terdaftar" color="from-amber-500 to-amber-700" to="/kelas" />
+          </div>
+
+          <div className="mt-6 grid lg:grid-cols-2 gap-4">
+            <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-6">
+              <h2 className="font-semibold text-slate-900">Absensi Hari Ini</h2>
+              {att && att.total > 0 ? (
+                <div className="mt-4 grid grid-cols-4 gap-3">
+                  <Pill label="Hadir" value={att.hadir} color="bg-emerald-100 text-emerald-700" />
+                  <Pill label="Izin" value={att.izin} color="bg-sky-100 text-sky-700" />
+                  <Pill label="Sakit" value={att.sakit} color="bg-amber-100 text-amber-700" />
+                  <Pill label="Alpa" value={att.alpa} color="bg-rose-100 text-rose-700" />
+                </div>
+              ) : (
+                <p className="mt-4 text-sm text-slate-500">
+                  Belum ada absensi hari ini.
+                </p>
+              )}
+              <div className="mt-5 flex gap-2">
+                <Link to="/absensi" className="btn-primary">
+                  Input Absensi
+                </Link>
+              </div>
+            </div>
+
+            <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-6">
+              <h2 className="font-semibold text-slate-900">SPP Bulan Ini ({spp?.period})</h2>
+              {spp && spp.total > 0 ? (
+                <div className="mt-4 flex items-end gap-6">
+                  <div>
+                    <div className="text-3xl font-bold text-emerald-600">
+                      {Math.round(((spp.lunas || 0) / spp.total) * 100)}%
+                    </div>
+                    <div className="text-xs text-slate-500">tagihan lunas</div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-500"
+                        style={{ width: `${Math.round(((spp.lunas || 0) / spp.total) * 100)}%` }}
+                      />
+                    </div>
+                    <div className="mt-2 text-xs text-slate-500">
+                      {spp.lunas} lunas · {spp.belum} belum · total {spp.total}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-4 text-sm text-slate-500">
+                  Belum ada tagihan SPP bulan ini.
+                </p>
+              )}
+              <div className="mt-5 flex gap-2">
+                <Link to="/spp" className="btn-primary">
+                  Kelola Tagihan
+                </Link>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <QuickLink to="/pengumuman" title="Pengumuman" desc="Kirim info ke guru / kelas" />
+            <QuickLink to="/jadwal" title="Jadwal Kelas" desc="Lihat & atur jadwal mingguan" />
+            <QuickLink to="/galeri" title="Galeri Kegiatan" desc="Album foto kegiatan sekolah" />
+            <QuickLink to="/rapor" title="Rapor" desc="Catatan perkembangan siswa" />
+          </div>
+        </>
+      )}
+    </AppLayout>
+  )
+}
+
+function Card({
+  title,
+  value,
+  sub,
+  color,
+  to,
+}: {
+  title: string
+  value: number
+  sub: string
+  color: string
+  to?: string
+}) {
+  const inner = (
+    <div className={`rounded-2xl bg-gradient-to-br ${color} text-white p-5 shadow-soft transition hover:scale-[1.01]`}>
+      <div className="text-sm text-white/80">{title}</div>
+      <div className="mt-2 text-4xl font-bold">{value}</div>
+      <div className="text-xs text-white/80">{sub}</div>
+    </div>
+  )
+  if (to) return <Link to={to}>{inner}</Link>
+  return inner
+}
+
+function Pill({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className={`rounded-xl ${color} p-3 text-center`}>
+      <div className="text-2xl font-bold">{value}</div>
+      <div className="text-xs">{label}</div>
+    </div>
+  )
+}
+
+function QuickLink({ to, title, desc }: { to: string; title: string; desc: string }) {
+  return (
+    <Link
+      to={to}
+      className="block rounded-xl bg-white ring-1 ring-slate-200 p-4 hover:ring-primary-300 hover:bg-primary-50/50 transition"
+    >
+      <div className="font-semibold text-slate-900">{title}</div>
+      <div className="text-xs text-slate-500 mt-1">{desc}</div>
+    </Link>
+  )
+}
