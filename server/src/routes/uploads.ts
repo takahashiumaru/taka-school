@@ -8,7 +8,7 @@ import { requireAuth } from "../auth.js"
 const router = Router()
 router.use(requireAuth())
 
-const UPLOAD_ROOT = path.resolve(process.cwd(), "uploads")
+const UPLOAD_ROOT = process.env.VERCEL === "1" ? path.resolve("/tmp", "uploads") : path.resolve(process.cwd(), "uploads")
 fs.mkdirSync(UPLOAD_ROOT, { recursive: true })
 
 const storage = multer.diskStorage({
