@@ -100,18 +100,18 @@ export default function GuruPage() {
     <AppLayout>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Data Guru</h1>
-          <p className="text-sm text-slate-600 mt-1">{items.length} guru terdaftar</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Data Guru</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{items.length} guru terdaftar</p>
         </div>
         <button onClick={openNew} className="btn-primary">+ Tambah Guru</button>
       </div>
 
-      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3">{error}</div>}
+      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">{error}</div>}
 
-      <div className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden">
+      <div className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden dark:bg-slate-900 dark:ring-slate-800">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-slate-600">
+            <thead className="bg-slate-50 text-left text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
               <tr>
                 <th className="px-4 py-3 font-semibold">Nama</th>
                 <th className="px-4 py-3 font-semibold">Email</th>
@@ -120,20 +120,20 @@ export default function GuruPage() {
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-500">Memuat…</td></tr>}
-              {!loading && items.length === 0 && <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-500">Belum ada guru.</td></tr>}
+              {loading && <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-500 dark:text-slate-400">Memuat…</td></tr>}
+              {!loading && items.length === 0 && <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-500 dark:text-slate-400">Belum ada guru.</td></tr>}
               {items.map((t) => (
-                <tr key={t.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3 font-medium text-slate-900">{t.name}</td>
-                  <td className="px-4 py-3 text-slate-600">{t.email}</td>
+                <tr key={t.id} className="border-t border-slate-100 dark:border-slate-800">
+                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{t.name}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-300">{t.email}</td>
                   <td className="px-4 py-3">
-                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${t.is_active ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-600"}`}>
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${t.is_active ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400"}`}>
                       {t.is_active ? "Aktif" : "Nonaktif"}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <button onClick={() => openEdit(t)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 mr-1">Edit</button>
-                    <button onClick={() => handleDelete(t)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50">Hapus</button>
+                    <button onClick={() => openEdit(t)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 mr-1 dark:text-primary-300 dark:hover:bg-primary-500/10">Edit</button>
+                    <button onClick={() => handleDelete(t)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
                   </td>
                 </tr>
               ))}
@@ -145,15 +145,15 @@ export default function GuruPage() {
       <Modal open={open} onClose={() => setOpen(false)} title={form.id ? "Edit Guru" : "Tambah Guru"}>
         <form onSubmit={handleSave} className="grid gap-3">
           <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 mb-1">Nama Lengkap *</span>
+            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap *</span>
             <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-base" />
           </label>
           <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 mb-1">Email *</span>
+            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Email *</span>
             <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-base" />
           </label>
           <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 mb-1">
+            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
               Password {form.id ? "(kosongkan untuk tidak ganti)" : "*"}
             </span>
             <input
@@ -172,7 +172,7 @@ export default function GuruPage() {
                 checked={form.isActive}
                 onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
               />
-              <span className="text-sm text-slate-700">Aktif</span>
+              <span className="text-sm text-slate-700 dark:text-slate-300">Aktif</span>
             </label>
           )}
           <div className="flex justify-end gap-2 pt-2">

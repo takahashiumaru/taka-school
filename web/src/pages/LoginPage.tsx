@@ -34,7 +34,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2 bg-white">
+    <div className="min-h-screen grid lg:grid-cols-2 bg-white dark:bg-slate-950">
       <div className="relative hidden lg:flex bg-gradient-to-br from-primary-600 to-primary-800 text-white p-12 flex-col justify-between overflow-hidden">
         <div className="absolute -top-32 -right-32 h-96 w-96 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute -bottom-32 -left-32 h-96 w-96 rounded-full bg-accent-400/20 blur-3xl" />
@@ -77,17 +77,19 @@ export default function LoginPage() {
             </Link>
           </div>
 
-          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Masuk ke Taka School</h1>
-          <p className="mt-2 text-slate-600">Halaman login untuk admin & guru sekolah.</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Masuk ke Taka School</h1>
+          <p className="mt-2 text-slate-600 dark:text-slate-400">Halaman login untuk admin & guru sekolah.</p>
 
-          <div className="mt-6 inline-flex p-1 rounded-xl bg-slate-100 ring-1 ring-slate-200">
+          <div className="mt-6 inline-flex p-1 rounded-xl bg-slate-100 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
             {(["guru", "admin"] as const).map((r) => (
               <button
                 key={r}
                 type="button"
                 onClick={() => setRole(r)}
                 className={`px-4 py-2 text-sm font-semibold rounded-lg transition ${
-                  role === r ? "bg-white text-primary-700 shadow-sm" : "text-slate-600 hover:text-slate-900"
+                  role === r
+                    ? "bg-white text-primary-700 shadow-sm dark:bg-slate-900 dark:text-primary-300"
+                    : "text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200"
                 }`}
               >
                 {r === "guru" ? "Guru" : "Admin Sekolah"}
@@ -95,44 +97,44 @@ export default function LoginPage() {
             ))}
           </div>
 
-          <div className="mt-3 rounded-xl bg-primary-50 ring-1 ring-primary-100 px-4 py-3 text-sm text-primary-800">
+          <div className="mt-3 rounded-xl bg-primary-50 ring-1 ring-primary-100 px-4 py-3 text-sm text-primary-800 dark:bg-primary-500/10 dark:ring-primary-500/30 dark:text-primary-200">
             <div className="font-semibold">Akun demo:</div>
             <div className="mt-1 grid grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
                 onClick={() => fillDemo("admin")}
-                className="text-left rounded-lg bg-white px-2 py-1.5 ring-1 ring-primary-100 hover:bg-primary-100"
+                className="text-left rounded-lg bg-white px-2 py-1.5 ring-1 ring-primary-100 hover:bg-primary-100 dark:bg-slate-900 dark:ring-primary-500/40 dark:hover:bg-primary-500/15"
               >
                 <div className="font-semibold">Admin</div>
-                <div className="text-slate-600">admin@demo.id / admin123</div>
+                <div className="text-slate-600 dark:text-slate-400">admin@demo.id / admin123</div>
               </button>
               <button
                 type="button"
                 onClick={() => fillDemo("guru")}
-                className="text-left rounded-lg bg-white px-2 py-1.5 ring-1 ring-primary-100 hover:bg-primary-100"
+                className="text-left rounded-lg bg-white px-2 py-1.5 ring-1 ring-primary-100 hover:bg-primary-100 dark:bg-slate-900 dark:ring-primary-500/40 dark:hover:bg-primary-500/15"
               >
                 <div className="font-semibold">Guru</div>
-                <div className="text-slate-600">guru@demo.id / guru123</div>
+                <div className="text-slate-600 dark:text-slate-400">guru@demo.id / guru123</div>
               </button>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
             <div>
-              <label className="text-sm font-medium text-slate-700">Email</label>
+              <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder={role === "admin" ? "admin@sekolah.sch.id" : "guru@sekolah.sch.id"}
-                className="mt-1.5 w-full rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-primary-400 focus:outline-none px-4 py-3 text-sm"
+                className="mt-1.5 w-full rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-primary-400 focus:outline-none px-4 py-3 text-sm dark:bg-slate-900 dark:ring-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-primary-600"
               />
             </div>
             <div>
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-slate-700">Password</label>
-                <a href="#" className="text-xs font-semibold text-primary-600 hover:text-primary-700">
+                <label className="text-sm font-medium text-slate-700 dark:text-slate-300">Password</label>
+                <a href="#" className="text-xs font-semibold text-primary-600 hover:text-primary-700 dark:text-primary-300 dark:hover:text-primary-200">
                   Lupa password?
                 </a>
               </div>
@@ -143,12 +145,12 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-primary-400 focus:outline-none px-4 py-3 pr-11 text-sm"
+                  className="w-full rounded-xl ring-1 ring-slate-200 focus:ring-2 focus:ring-primary-400 focus:outline-none px-4 py-3 pr-11 text-sm dark:bg-slate-900 dark:ring-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-primary-600"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPwd((v) => !v)}
-                  className="absolute inset-y-0 right-2 my-auto h-9 w-9 inline-flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100"
+                  className="absolute inset-y-0 right-2 my-auto h-9 w-9 inline-flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
                   aria-label={showPwd ? "Sembunyikan" : "Tampilkan"}
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
@@ -165,13 +167,13 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <label className="flex items-center gap-2 text-sm text-slate-600">
-              <input type="checkbox" className="rounded border-slate-300" />
+            <label className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+              <input type="checkbox" className="rounded border-slate-300 dark:border-slate-700 dark:bg-slate-800" />
               Ingat saya di perangkat ini
             </label>
 
             {error && (
-              <div className="rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3">
+              <div className="rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">
                 {error}
               </div>
             )}
@@ -181,14 +183,14 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="mt-6 text-sm text-slate-600 text-center">
+          <p className="mt-6 text-sm text-slate-600 text-center dark:text-slate-400">
             Belum punya akun sekolah?{" "}
-            <Link to="/#daftar" className="font-semibold text-primary-700 hover:text-primary-800">
+            <Link to="/#daftar" className="font-semibold text-primary-700 hover:text-primary-800 dark:text-primary-300 dark:hover:text-primary-200">
               Daftar Sekolah
             </Link>
           </p>
 
-          <p className="mt-8 text-xs text-slate-500 text-center">
+          <p className="mt-8 text-xs text-slate-500 text-center dark:text-slate-500">
             Orang tua tidak perlu login. Info anak dikirim via WhatsApp dari sekolah.
           </p>
         </div>

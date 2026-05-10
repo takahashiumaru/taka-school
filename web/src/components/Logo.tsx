@@ -5,8 +5,8 @@ type LogoProps = {
 
 export default function Logo({ className = "", variant = "default" }: LogoProps) {
   const isWhite = variant === "white"
-  const baseColor = isWhite ? "text-white" : "text-slate-900"
-  const accentColor = isWhite ? "text-accent-400" : "text-primary-600"
+  const baseColor = isWhite ? "text-white" : "text-slate-900 dark:text-slate-100"
+  const accentColor = isWhite ? "text-accent-400" : "text-primary-600 dark:text-primary-400"
   return (
     <div className={`flex items-center gap-2 ${className}`}>
       <img src="/logo.png" alt="Taka School" className="h-9 w-9 rounded-xl object-contain" />

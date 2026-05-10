@@ -38,15 +38,15 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <div className="text-xs text-slate-500">{today}</div>
-      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900">Dashboard</h1>
-      <p className="text-sm text-slate-600 mt-1">
+      <div className="text-xs text-slate-500 dark:text-slate-400">{today}</div>
+      <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Dashboard</h1>
+      <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
         Halo, <span className="font-semibold">{user.name}</span> — ringkasan operasional sekolahmu hari ini.
       </p>
 
-      {loading && <div className="mt-6 text-slate-500">Memuat data…</div>}
+      {loading && <div className="mt-6 text-slate-500 dark:text-slate-400">Memuat data…</div>}
       {error && (
-        <div className="mt-6 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3">
+        <div className="mt-6 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">
           {error}
         </div>
       )}
@@ -60,17 +60,17 @@ export default function DashboardPage() {
           </div>
 
           <div className="mt-6 grid lg:grid-cols-2 gap-4">
-            <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-6">
-              <h2 className="font-semibold text-slate-900">Absensi Hari Ini</h2>
+            <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-6 dark:bg-slate-900 dark:ring-slate-800">
+              <h2 className="font-semibold text-slate-900 dark:text-slate-100">Absensi Hari Ini</h2>
               {att && att.total > 0 ? (
                 <div className="mt-4 grid grid-cols-4 gap-3">
-                  <Pill label="Hadir" value={att.hadir} color="bg-emerald-100 text-emerald-700" />
-                  <Pill label="Izin" value={att.izin} color="bg-sky-100 text-sky-700" />
-                  <Pill label="Sakit" value={att.sakit} color="bg-amber-100 text-amber-700" />
-                  <Pill label="Alpa" value={att.alpa} color="bg-rose-100 text-rose-700" />
+                  <Pill label="Hadir" value={att.hadir} color="bg-emerald-100 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" />
+                  <Pill label="Izin" value={att.izin} color="bg-sky-100 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300" />
+                  <Pill label="Sakit" value={att.sakit} color="bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-300" />
+                  <Pill label="Alpa" value={att.alpa} color="bg-rose-100 text-rose-700 dark:bg-rose-500/15 dark:text-rose-300" />
                 </div>
               ) : (
-                <p className="mt-4 text-sm text-slate-500">
+                <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
                   Belum ada absensi hari ini.
                 </p>
               )}
@@ -81,30 +81,30 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-6">
-              <h2 className="font-semibold text-slate-900">SPP Bulan Ini ({spp?.period})</h2>
+            <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-6 dark:bg-slate-900 dark:ring-slate-800">
+              <h2 className="font-semibold text-slate-900 dark:text-slate-100">SPP Bulan Ini ({spp?.period})</h2>
               {spp && spp.total > 0 ? (
                 <div className="mt-4 flex items-end gap-6">
                   <div>
-                    <div className="text-3xl font-bold text-emerald-600">
+                    <div className="text-3xl font-bold text-emerald-600 dark:text-emerald-400">
                       {Math.round(((spp.lunas || 0) / spp.total) * 100)}%
                     </div>
-                    <div className="text-xs text-slate-500">tagihan lunas</div>
+                    <div className="text-xs text-slate-500 dark:text-slate-400">tagihan lunas</div>
                   </div>
                   <div className="flex-1">
-                    <div className="h-2 rounded-full bg-slate-100 overflow-hidden">
+                    <div className="h-2 rounded-full bg-slate-100 overflow-hidden dark:bg-slate-800">
                       <div
                         className="h-full bg-emerald-500"
                         style={{ width: `${Math.round(((spp.lunas || 0) / spp.total) * 100)}%` }}
                       />
                     </div>
-                    <div className="mt-2 text-xs text-slate-500">
+                    <div className="mt-2 text-xs text-slate-500 dark:text-slate-400">
                       {spp.lunas} lunas · {spp.belum} belum · total {spp.total}
                     </div>
                   </div>
                 </div>
               ) : (
-                <p className="mt-4 text-sm text-slate-500">
+                <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">
                   Belum ada tagihan SPP bulan ini.
                 </p>
               )}
@@ -165,10 +165,10 @@ function QuickLink({ to, title, desc }: { to: string; title: string; desc: strin
   return (
     <Link
       to={to}
-      className="block rounded-xl bg-white ring-1 ring-slate-200 p-4 hover:ring-primary-300 hover:bg-primary-50/50 transition"
+      className="block rounded-xl bg-white ring-1 ring-slate-200 p-4 hover:ring-primary-300 hover:bg-primary-50/50 transition dark:bg-slate-900 dark:ring-slate-800 dark:hover:ring-primary-500 dark:hover:bg-primary-500/10"
     >
-      <div className="font-semibold text-slate-900">{title}</div>
-      <div className="text-xs text-slate-500 mt-1">{desc}</div>
+      <div className="font-semibold text-slate-900 dark:text-slate-100">{title}</div>
+      <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">{desc}</div>
     </Link>
   )
 }

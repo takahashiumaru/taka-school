@@ -50,7 +50,7 @@ const plans = [
 
 export default function Pricing() {
   return (
-    <section id="harga" className="section bg-slate-50">
+    <section id="harga" className="section bg-slate-50 dark:bg-slate-900/40">
       <div className="max-w-7xl mx-auto container-px">
         <div className="text-center max-w-2xl mx-auto">
           <span className="eyebrow">Harga</span>
@@ -66,8 +66,8 @@ export default function Pricing() {
               key={p.name}
               className={`rounded-2xl p-7 flex flex-col ${
                 p.highlight
-                  ? "bg-gradient-to-br from-primary-600 to-primary-800 text-white ring-1 ring-primary-700 shadow-soft scale-[1.02]"
-                  : "bg-white ring-1 ring-slate-200"
+                  ? "bg-gradient-to-br from-primary-600 to-primary-800 text-white ring-1 ring-primary-700 shadow-soft scale-[1.02] dark:from-primary-500 dark:to-primary-700"
+                  : "bg-white ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800"
               }`}
             >
               {p.highlight && (
@@ -75,22 +75,22 @@ export default function Pricing() {
                   ⭐ Paling populer
                 </span>
               )}
-              <h3 className={`text-lg font-semibold ${p.highlight ? "text-white" : "text-slate-900"}`}>
+              <h3 className={`text-lg font-semibold ${p.highlight ? "text-white" : "text-slate-900 dark:text-slate-100"}`}>
                 {p.name}
               </h3>
               <div className="mt-3 flex items-baseline gap-1">
-                <span className={`text-4xl font-bold ${p.highlight ? "text-white" : "text-slate-900"}`}>{p.price}</span>
-                <span className={`text-sm ${p.highlight ? "text-primary-100" : "text-slate-500"}`}>{p.period}</span>
+                <span className={`text-4xl font-bold ${p.highlight ? "text-white" : "text-slate-900 dark:text-slate-100"}`}>{p.price}</span>
+                <span className={`text-sm ${p.highlight ? "text-primary-100" : "text-slate-500 dark:text-slate-400"}`}>{p.period}</span>
               </div>
-              <p className={`mt-2 text-sm ${p.highlight ? "text-primary-100" : "text-slate-600"}`}>{p.desc}</p>
+              <p className={`mt-2 text-sm ${p.highlight ? "text-primary-100" : "text-slate-600 dark:text-slate-400"}`}>{p.desc}</p>
 
               <ul className="mt-5 space-y-2.5 flex-1">
                 {p.features.map((f) => (
                   <li key={f} className="flex items-start gap-2 text-sm">
-                    <svg className={`h-5 w-5 flex-none ${p.highlight ? "text-primary-200" : "text-emerald-500"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                    <svg className={`h-5 w-5 flex-none ${p.highlight ? "text-primary-200" : "text-emerald-500 dark:text-emerald-400"}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                     </svg>
-                    <span className={p.highlight ? "text-primary-50" : "text-slate-700"}>{f}</span>
+                    <span className={p.highlight ? "text-primary-50" : "text-slate-700 dark:text-slate-300"}>{f}</span>
                   </li>
                 ))}
               </ul>
@@ -99,7 +99,7 @@ export default function Pricing() {
                 href="#daftar"
                 className={`mt-6 btn ${
                   p.highlight
-                    ? "bg-white text-primary-700 hover:bg-primary-50 px-5 py-3"
+                    ? "bg-white text-primary-700 hover:bg-primary-50 px-5 py-3 dark:bg-slate-100 dark:hover:bg-white"
                     : "btn-primary"
                 }`}
               >
@@ -109,7 +109,7 @@ export default function Pricing() {
           ))}
         </div>
 
-        <p className="mt-8 text-center text-sm text-slate-500">
+        <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
           Harga belum termasuk PPN. Bisa upgrade/downgrade kapan saja.
         </p>
       </div>

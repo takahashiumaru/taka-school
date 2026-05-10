@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import AppLayout from "../components/AppLayout"
 import Modal from "../components/Modal"
+import Select from "../components/Select"
 import {
   Classes,
   Students,
@@ -148,8 +149,8 @@ export default function SiswaPage() {
     <AppLayout>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Data Siswa</h1>
-          <p className="text-sm text-slate-600 mt-1">{filtered.length} siswa ditampilkan</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Data Siswa</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{filtered.length} siswa ditampilkan</p>
         </div>
         <button onClick={openNew} className="btn-primary">+ Tambah Siswa</button>
       </div>
@@ -161,34 +162,29 @@ export default function SiswaPage() {
           placeholder="Cari nama / NIS / wali murid…"
           className="input-base"
         />
-        <select
-          value={filterClass}
-          onChange={(e) => setFilterClass(e.target.value ? Number(e.target.value) : "")}
-          className="input-base"
-        >
-          <option value="">Semua Kelas</option>
-          {classes.map((c) => (
-            <option key={c.id} value={c.id}>{c.name}</option>
-          ))}
-        </select>
-        <select
+        <Select
+          value={filterClass === "" ? "" : String(filterClass)}
+          onChange={(v) => setFilterClass(v ? Number(v) : "")}
+          options={[{ value: "", label: "Semua Kelas" }, ...classes.map((c) => ({ value: String(c.id), label: c.name }))]}
+        />
+        <Select
           value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="input-base"
-        >
-          <option value="">Semua Status</option>
-          <option value="aktif">Aktif</option>
-          <option value="lulus">Lulus</option>
-          <option value="keluar">Keluar</option>
-        </select>
+          onChange={setFilterStatus}
+          options={[
+            { value: "", label: "Semua Status" },
+            { value: "aktif", label: "Aktif" },
+            { value: "lulus", label: "Lulus" },
+            { value: "keluar", label: "Keluar" },
+          ]}
+        />
       </div>
 
-      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3">{error}</div>}
+      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">{error}</div>}
 
-      <div className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden">
+      <div className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden dark:bg-slate-900 dark:ring-slate-800">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-slate-600">
+            <thead className="bg-slate-50 text-left text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
               <tr>
                 <th className="px-4 py-3 font-semibold">Nama</th>
                 <th className="px-4 py-3 font-semibold">NIS</th>
@@ -207,16 +203,16 @@ export default function SiswaPage() {
                 <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-500">Belum ada data.</td></tr>
               )}
               {filtered.map((s) => (
-                <tr key={s.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3 font-medium text-slate-900">{s.name}</td>
-                  <td className="px-4 py-3 text-slate-600">{s.nis || "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{s.class_name || "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">{s.gender || "—"}</td>
-                  <td className="px-4 py-3 text-slate-600">
+                <tr key={s.id} className="border-t border-slate-100 dark:border-slate-800">
+                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{s.name}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{s.nis || "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{s.class_name || "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{s.gender || "—"}</td>
+                  <td className="px-4 py-3 text-slate-600 dark:text-slate-400">
                     {s.parent_name ? (
                       <span>
                         {s.parent_name}
-                        {s.parent_wa && <span className="text-slate-400"> · {s.parent_wa}</span>}
+                        {s.parent_wa && <span className="text-slate-400 dark:text-slate-500"> · {s.parent_wa}</span>}
                       </span>
                     ) : "—"}
                   </td>
@@ -229,14 +225,14 @@ export default function SiswaPage() {
                         href={waLink(s.parent_wa, `Halo ${s.parent_name || "Bapak/Ibu"}, mohon waktunya untuk informasi terkait ananda ${s.name} di sekolah.`) || "#"}
                         target="_blank"
                         rel="noreferrer"
-                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 mr-1"
+                        className="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 mr-1"
                         title="Chat WA wali murid"
                       >
                         WA
                       </a>
                     )}
-                    <button onClick={() => openEdit(s)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 mr-1">Edit</button>
-                    <button onClick={() => handleDelete(s)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50">Hapus</button>
+                    <button onClick={() => openEdit(s)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10 mr-1">Edit</button>
+                    <button onClick={() => handleDelete(s)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
                   </td>
                 </tr>
               ))}
@@ -254,29 +250,36 @@ export default function SiswaPage() {
             <input value={form.nis} onChange={(e) => setForm({ ...form, nis: e.target.value })} className="input-base" />
           </Field>
           <Field label="Kelas">
-            <select value={form.classId ?? ""} onChange={(e) => setForm({ ...form, classId: e.target.value ? Number(e.target.value) : null })} className="input-base">
-              <option value="">— Belum berkelas —</option>
-              {classes.map((c) => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
+            <Select
+              value={form.classId ? String(form.classId) : ""}
+              onChange={(v) => setForm({ ...form, classId: v ? Number(v) : null })}
+              options={[{ value: "", label: "— Belum berkelas —" }, ...classes.map((c) => ({ value: String(c.id), label: c.name }))]}
+            />
           </Field>
           <Field label="Jenis Kelamin">
-            <select value={form.gender} onChange={(e) => setForm({ ...form, gender: e.target.value as "L" | "P" | "" })} className="input-base">
-              <option value="">—</option>
-              <option value="L">Laki-laki</option>
-              <option value="P">Perempuan</option>
-            </select>
+            <Select
+              value={form.gender}
+              onChange={(v) => setForm({ ...form, gender: v as "L" | "P" | "" })}
+              options={[
+                { value: "", label: "—" },
+                { value: "L", label: "Laki-laki" },
+                { value: "P", label: "Perempuan" },
+              ]}
+            />
           </Field>
           <Field label="Tanggal Lahir">
             <input type="date" value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} className="input-base" />
           </Field>
           <Field label="Status">
-            <select value={form.status} onChange={(e) => setForm({ ...form, status: e.target.value as "aktif" | "lulus" | "keluar" })} className="input-base">
-              <option value="aktif">Aktif</option>
-              <option value="lulus">Lulus</option>
-              <option value="keluar">Keluar</option>
-            </select>
+            <Select
+              value={form.status}
+              onChange={(v) => setForm({ ...form, status: v as "aktif" | "lulus" | "keluar" })}
+              options={[
+                { value: "aktif", label: "Aktif" },
+                { value: "lulus", label: "Lulus" },
+                { value: "keluar", label: "Keluar" },
+              ]}
+            />
           </Field>
           <Field label="Nama Wali Murid">
             <input value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} className="input-base" />
@@ -301,18 +304,18 @@ export default function SiswaPage() {
 
 function Field({ label, full, children }: { label: string; full?: boolean; children: React.ReactNode }) {
   return (
-    <label className={`block ${full ? "sm:col-span-2" : ""}`}>
-      <span className="block text-xs font-semibold text-slate-700 mb-1">{label}</span>
+    <div className={`block ${full ? "sm:col-span-2" : ""}`}>
+      <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{label}</span>
       {children}
-    </label>
+    </div>
   )
 }
 
 function StatusBadge({ status }: { status: "aktif" | "lulus" | "keluar" }) {
   const colors = {
-    aktif: "bg-emerald-50 text-emerald-700",
-    lulus: "bg-sky-50 text-sky-700",
-    keluar: "bg-slate-100 text-slate-600",
+    aktif: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
+    lulus: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300",
+    keluar: "bg-slate-100 text-slate-600 dark:bg-slate-700/40 dark:text-slate-300",
   }
   return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${colors[status]}`}>{status}</span>
 }

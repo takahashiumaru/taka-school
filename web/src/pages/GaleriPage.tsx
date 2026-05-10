@@ -188,39 +188,39 @@ export default function GaleriPage() {
     <AppLayout>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Galeri Kegiatan</h1>
-          <p className="text-sm text-slate-600 mt-1">Album foto kegiatan sekolah</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Galeri Kegiatan</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Album foto kegiatan sekolah</p>
         </div>
         <button onClick={openNew} className="btn-primary">+ Album Baru</button>
       </div>
 
-      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3">{error}</div>}
+      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">{error}</div>}
 
       <div className="mt-5 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {loading && <div className="text-slate-500">Memuat…</div>}
-        {!loading && items.length === 0 && <div className="text-slate-500">Belum ada album.</div>}
+        {loading && <div className="text-slate-500 dark:text-slate-400">Memuat…</div>}
+        {!loading && items.length === 0 && <div className="text-slate-500 dark:text-slate-400">Belum ada album.</div>}
         {items.map((g) => (
-          <div key={g.id} className="rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden">
+          <div key={g.id} className="rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden dark:bg-slate-900 dark:ring-slate-800">
             <button onClick={() => openView(g)} className="block w-full text-left">
-              <div className="aspect-[16/9] bg-slate-100 overflow-hidden">
+              <div className="aspect-[16/9] bg-slate-100 overflow-hidden dark:bg-slate-800">
                 {g.cover_url ? (
                   <img src={g.cover_url} alt={g.title} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm">Tanpa cover</div>
+                  <div className="w-full h-full flex items-center justify-center text-slate-400 text-sm dark:text-slate-500">Tanpa cover</div>
                 )}
               </div>
               <div className="p-4">
-                <div className="font-bold text-slate-900">{g.title}</div>
-                <div className="text-xs text-slate-500 mt-0.5">
+                <div className="font-bold text-slate-900 dark:text-slate-100">{g.title}</div>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   {g.event_date ? new Date(g.event_date).toLocaleDateString("id-ID") : "—"}
                   <span> · {g.photo_count} foto</span>
                 </div>
-                {g.description && <p className="mt-2 text-sm text-slate-600 line-clamp-2">{g.description}</p>}
+                {g.description && <p className="mt-2 text-sm text-slate-600 dark:text-slate-400 line-clamp-2">{g.description}</p>}
               </div>
             </button>
             <div className="px-4 pb-3 flex gap-2">
-              <button onClick={() => openEdit(g)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50">Edit</button>
-              <button onClick={() => handleDelete(g)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50">Hapus</button>
+              <button onClick={() => openEdit(g)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10">Edit</button>
+              <button onClick={() => handleDelete(g)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
             </div>
           </div>
         ))}
@@ -229,18 +229,18 @@ export default function GaleriPage() {
       <Modal open={open} onClose={() => setOpen(false)} title={form.id ? "Edit Album" : "Album Baru"}>
         <form onSubmit={handleSave} className="grid gap-3">
           <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 mb-1">Judul *</span>
+            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Judul *</span>
             <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-base" />
           </label>
           <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 mb-1">Tanggal Kegiatan</span>
+            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tanggal Kegiatan</span>
             <input type="date" value={form.eventDate} onChange={(e) => setForm({ ...form, eventDate: e.target.value })} className="input-base" />
           </label>
           <div>
-            <span className="block text-xs font-semibold text-slate-700 mb-1">Cover Album</span>
+            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Cover Album</span>
             {form.coverUrl && (
               <div className="mb-2 relative inline-block">
-                <img src={form.coverUrl} alt="" className="h-24 rounded-lg ring-1 ring-slate-200 object-cover" />
+                <img src={form.coverUrl} alt="" className="h-24 rounded-lg ring-1 ring-slate-200 object-cover dark:ring-slate-700" />
                 <button type="button" onClick={() => setForm({ ...form, coverUrl: "" })} className="absolute top-1 right-1 px-1.5 py-0.5 rounded-md text-xs bg-rose-600 text-white">×</button>
               </div>
             )}
@@ -263,7 +263,7 @@ export default function GaleriPage() {
             </div>
           </div>
           <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 mb-1">Deskripsi</span>
+            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Deskripsi</span>
             <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-base" />
           </label>
           <div className="flex justify-end gap-2 pt-1">
@@ -276,7 +276,7 @@ export default function GaleriPage() {
       <Modal open={!!viewing} onClose={() => setViewing(null)} title={viewing?.title || ""} size="lg">
         {viewing && (
           <div className="space-y-4">
-            <div className="rounded-xl bg-slate-50 p-3 space-y-2">
+            <div className="rounded-xl bg-slate-50 p-3 space-y-2 dark:bg-slate-800/50">
               <div className="flex flex-wrap items-center gap-2">
                 <input
                   ref={bulkFileRef}
@@ -294,7 +294,7 @@ export default function GaleriPage() {
                 >
                   {uploading ? "Mengupload…" : "📷 Upload foto (bisa banyak)"}
                 </button>
-                <span className="text-xs text-slate-500">atau tambah via URL ↓</span>
+                <span className="text-xs text-slate-500 dark:text-slate-400">atau tambah via URL ↓</span>
               </div>
               <form onSubmit={handleAddPhotoUrl} className="grid sm:grid-cols-[1fr_1fr_auto] gap-2">
                 <input
@@ -324,13 +324,13 @@ export default function GaleriPage() {
               </form>
             </div>
             {viewing.items.length === 0 ? (
-              <div className="text-sm text-slate-500">Belum ada foto.</div>
+              <div className="text-sm text-slate-500 dark:text-slate-400">Belum ada foto.</div>
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {viewing.items.map((it) => (
-                  <div key={it.id} className="rounded-xl overflow-hidden ring-1 ring-slate-200 relative group">
+                  <div key={it.id} className="rounded-xl overflow-hidden ring-1 ring-slate-200 relative group dark:ring-slate-700">
                     <img src={it.photo_url} alt={it.caption ?? ""} className="aspect-square w-full object-cover" />
-                    {it.caption && <div className="p-2 text-xs text-slate-600">{it.caption}</div>}
+                    {it.caption && <div className="p-2 text-xs text-slate-600 dark:text-slate-300 dark:bg-slate-800">{it.caption}</div>}
                     <button
                       onClick={() => handleRemovePhoto(it.id)}
                       className="absolute top-1 right-1 px-2 py-0.5 rounded-md text-xs bg-rose-600 text-white opacity-0 group-hover:opacity-100 transition"

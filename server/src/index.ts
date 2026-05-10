@@ -41,10 +41,6 @@ app.use(
 )
 app.use(express.json({ limit: "1mb" }))
 
-app.get("/", (_req, res) => {
-  res.json({ message: "Taka School API is running. Go to /api/health to check status." })
-})
-
 app.get("/api/health", async (_req, res) => {
   try {
     await pool.query("SELECT 1")
@@ -67,7 +63,8 @@ app.use("/api/galleries", galleriesRoutes)
 app.use("/api/reports", reportsRoutes)
 app.use("/api/uploads", uploadsRoutes)
 
-
+const uploadsDir = path.resolve(process.cwd(), "uploads")
+app.use("/uploads", express.static(uploadsDir))
 
 const webDist = path.resolve(__dirname, "..", "..", "web", "dist")
 if (existsSync(webDist)) {
@@ -97,11 +94,7 @@ async function start() {
   })
 }
 
-if (process.env.VERCEL !== "1") {
-  start().catch((e) => {
-    console.error("Failed to start server:", e)
-    process.exit(1)
-  })
-}
-
-export default app;
+start().catch((e) => {
+  console.error("Failed to start server:", e)
+  process.exit(1)
+})

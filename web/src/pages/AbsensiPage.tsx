@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react"
 import AppLayout from "../components/AppLayout"
+import Select from "../components/Select"
 import {
   Attendance,
   Classes,
@@ -88,19 +89,21 @@ export default function AbsensiPage() {
 
   return (
     <AppLayout>
-      <h1 className="text-2xl font-bold text-slate-900">Absensi Harian</h1>
-      <p className="text-sm text-slate-600 mt-1">Pilih kelas & tanggal, lalu tandai status tiap siswa.</p>
+      <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Absensi Harian</h1>
+      <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Pilih kelas & tanggal, lalu tandai status tiap siswa.</p>
 
       <div className="mt-5 grid sm:grid-cols-3 gap-3">
+        <div>
+          <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kelas</span>
+          <Select
+            value={classId === "" ? "" : String(classId)}
+            onChange={(v) => setClassId(v ? Number(v) : "")}
+            placeholder="— pilih kelas —"
+            options={classes.map((c) => ({ value: String(c.id), label: c.name }))}
+          />
+        </div>
         <label className="block">
-          <span className="block text-xs font-semibold text-slate-700 mb-1">Kelas</span>
-          <select value={classId} onChange={(e) => setClassId(e.target.value ? Number(e.target.value) : "")} className="input-base">
-            <option value="">— pilih kelas —</option>
-            {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
-        </label>
-        <label className="block">
-          <span className="block text-xs font-semibold text-slate-700 mb-1">Tanggal</span>
+          <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tanggal</span>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="input-base" />
         </label>
         <div className="flex items-end gap-2">
@@ -108,20 +111,20 @@ export default function AbsensiPage() {
         </div>
       </div>
 
-      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3">{error}</div>}
-      {message && <div className="mt-4 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 text-emerald-700 text-sm p-3">{message}</div>}
+      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">{error}</div>}
+      {message && <div className="mt-4 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 text-emerald-700 text-sm p-3 dark:bg-emerald-500/10 dark:ring-emerald-500/30 dark:text-emerald-300">{message}</div>}
 
       <div className="mt-4 grid grid-cols-4 gap-2 max-w-lg">
-        <Counter label="Hadir" value={counts.hadir || 0} color="bg-emerald-50 text-emerald-700" />
-        <Counter label="Izin" value={counts.izin || 0} color="bg-sky-50 text-sky-700" />
-        <Counter label="Sakit" value={counts.sakit || 0} color="bg-amber-50 text-amber-700" />
-        <Counter label="Alpa" value={counts.alpa || 0} color="bg-rose-50 text-rose-700" />
+        <Counter label="Hadir" value={counts.hadir || 0} color="bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300" />
+        <Counter label="Izin" value={counts.izin || 0} color="bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300" />
+        <Counter label="Sakit" value={counts.sakit || 0} color="bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300" />
+        <Counter label="Alpa" value={counts.alpa || 0} color="bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300" />
       </div>
 
-      <div className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden">
+      <div className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden dark:bg-slate-900 dark:ring-slate-800">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-left text-slate-600">
+            <thead className="bg-slate-50 text-left text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
               <tr>
                 <th className="px-4 py-3 font-semibold">Nama</th>
                 <th className="px-4 py-3 font-semibold">NIS</th>
@@ -138,9 +141,9 @@ export default function AbsensiPage() {
                 <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-500">Pilih kelas dulu.</td></tr>
               )}
               {students.map((s) => (
-                <tr key={s.id} className="border-t border-slate-100">
-                  <td className="px-4 py-3 font-medium text-slate-900">{s.name}</td>
-                  <td className="px-4 py-3 text-slate-500 text-xs">{s.nis || "—"}</td>
+                <tr key={s.id} className="border-t border-slate-100 dark:border-slate-800">
+                  <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{s.name}</td>
+                  <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">{s.nis || "—"}</td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
                       {STATUSES.map((st) => (
@@ -148,7 +151,7 @@ export default function AbsensiPage() {
                           key={st.value}
                           onClick={() => setStatus(s.id, st.value)}
                           className={`px-2 py-1 rounded-lg text-xs font-semibold transition ${
-                            s.status === st.value ? st.color : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                            s.status === st.value ? st.color : "bg-slate-100 text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700"
                           }`}
                         >
                           {st.label}

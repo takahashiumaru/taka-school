@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import AppLayout from "../components/AppLayout"
 import Modal from "../components/Modal"
+import Select from "../components/Select"
 import {
   Announcements,
   Classes,
@@ -92,23 +93,23 @@ export default function PengumumanPage() {
     <AppLayout>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Pengumuman</h1>
-          <p className="text-sm text-slate-600 mt-1">Info untuk guru atau kelas tertentu</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Pengumuman</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Info untuk guru atau kelas tertentu</p>
         </div>
         <button onClick={openNew} className="btn-primary">+ Buat Pengumuman</button>
       </div>
 
-      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3">{error}</div>}
+      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">{error}</div>}
 
       <div className="mt-5 grid gap-4">
-        {loading && <div className="text-slate-500">Memuat…</div>}
-        {!loading && items.length === 0 && <div className="rounded-xl bg-white ring-1 ring-slate-200 p-6 text-slate-500">Belum ada pengumuman.</div>}
+        {loading && <div className="text-slate-500 dark:text-slate-400">Memuat…</div>}
+        {!loading && items.length === 0 && <div className="rounded-xl bg-white ring-1 ring-slate-200 p-6 text-slate-500 dark:bg-slate-900 dark:ring-slate-800 dark:text-slate-400">Belum ada pengumuman.</div>}
         {items.map((a) => (
-          <article key={a.id} className="rounded-2xl bg-white ring-1 ring-slate-200 p-5">
+          <article key={a.id} className="rounded-2xl bg-white ring-1 ring-slate-200 p-5 dark:bg-slate-900 dark:ring-slate-800">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 className="font-bold text-slate-900">{a.title}</h2>
-                <div className="text-xs text-slate-500 mt-0.5">
+                <h2 className="font-bold text-slate-900 dark:text-slate-100">{a.title}</h2>
+                <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                   {fmt(a.created_at)}
                   {a.author_name && <span> · oleh {a.author_name}</span>}
                   {a.class_name && <span> · ke kelas {a.class_name}</span>}
@@ -116,11 +117,11 @@ export default function PengumumanPage() {
                 </div>
               </div>
               <div className="flex gap-1">
-                <button onClick={() => openEdit(a)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50">Edit</button>
-                <button onClick={() => handleDelete(a)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50">Hapus</button>
+                <button onClick={() => openEdit(a)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10">Edit</button>
+                <button onClick={() => handleDelete(a)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
               </div>
             </div>
-            <p className="mt-3 text-sm text-slate-700 whitespace-pre-wrap">{a.body}</p>
+            <p className="mt-3 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{a.body}</p>
           </article>
         ))}
       </div>
@@ -128,20 +129,21 @@ export default function PengumumanPage() {
       <Modal open={open} onClose={() => setOpen(false)} title={form.id ? "Edit Pengumuman" : "Buat Pengumuman"} size="lg">
         <form onSubmit={handleSave} className="grid gap-3">
           <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 mb-1">Judul *</span>
+            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Judul *</span>
             <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-base" />
           </label>
           <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 mb-1">Isi *</span>
+            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Isi *</span>
             <textarea required rows={6} value={form.body} onChange={(e) => setForm({ ...form, body: e.target.value })} className="input-base" />
           </label>
-          <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 mb-1">Sasaran Kelas</span>
-            <select value={form.targetClassId ?? ""} onChange={(e) => setForm({ ...form, targetClassId: e.target.value ? Number(e.target.value) : null })} className="input-base">
-              <option value="">Semua kelas</option>
-              {classes.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
-          </label>
+          <div>
+            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Sasaran Kelas</span>
+            <Select
+              value={form.targetClassId ? String(form.targetClassId) : ""}
+              onChange={(v) => setForm({ ...form, targetClassId: v ? Number(v) : null })}
+              options={[{ value: "", label: "Semua kelas" }, ...classes.map((c) => ({ value: String(c.id), label: c.name }))]}
+            />
+          </div>
           <div className="flex justify-end gap-2 pt-1">
             <button type="button" onClick={() => setOpen(false)} className="btn-secondary">Batal</button>
             <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-50">{submitting ? "Menyimpan…" : form.id ? "Simpan" : "Kirim"}</button>

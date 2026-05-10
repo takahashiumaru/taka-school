@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import AppLayout from "../components/AppLayout"
 import Modal from "../components/Modal"
+import Select from "../components/Select"
 import {
   Reports,
   Students,
@@ -119,49 +120,48 @@ export default function RaporPage() {
     <AppLayout>
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Rapor Sederhana</h1>
-          <p className="text-sm text-slate-600 mt-1">Catatan perkembangan siswa per semester</p>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Rapor Sederhana</h1>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Catatan perkembangan siswa per semester</p>
         </div>
         <button onClick={openNew} className="btn-primary">+ Buat Rapor</button>
       </div>
 
       <div className="mt-5 max-w-sm">
-        <label className="block">
-          <span className="block text-xs font-semibold text-slate-700 mb-1">Filter Siswa</span>
-          <select value={filterStudent} onChange={(e) => setFilterStudent(e.target.value ? Number(e.target.value) : "")} className="input-base">
-            <option value="">Semua siswa</option>
-            {students.map((s) => <option key={s.id} value={s.id}>{s.name}</option>)}
-          </select>
-        </label>
+        <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Filter Siswa</span>
+        <Select
+          value={filterStudent === "" ? "" : String(filterStudent)}
+          onChange={(v) => setFilterStudent(v ? Number(v) : "")}
+          options={[{ value: "", label: "Semua siswa" }, ...students.map((s) => ({ value: String(s.id), label: s.name }))]}
+        />
       </div>
 
-      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3">{error}</div>}
+      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">{error}</div>}
 
       <div className="mt-5 grid lg:grid-cols-2 gap-4">
-        {loading && <div className="text-slate-500">Memuat…</div>}
-        {!loading && items.length === 0 && <div className="rounded-xl bg-white ring-1 ring-slate-200 p-6 text-slate-500">Belum ada rapor.</div>}
+        {loading && <div className="text-slate-500 dark:text-slate-400">Memuat…</div>}
+        {!loading && items.length === 0 && <div className="rounded-xl bg-white ring-1 ring-slate-200 p-6 text-slate-500 dark:bg-slate-900 dark:ring-slate-800 dark:text-slate-400">Belum ada rapor.</div>}
         {items.map((r) => {
           const stud = studentMap.get(r.student_id)
           const wa = stud?.parent_wa
             ? waLink(stud.parent_wa, `Yth. ${stud.parent_name || "Bapak/Ibu"}, berikut catatan rapor ananda ${r.student_name} untuk ${r.semester}:\n\n${r.body}\n\nTerima kasih.`)
             : null
           return (
-            <article key={r.id} className="rounded-2xl bg-white ring-1 ring-slate-200 p-5">
+            <article key={r.id} className="rounded-2xl bg-white ring-1 ring-slate-200 p-5 dark:bg-slate-900 dark:ring-slate-800">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                  <h2 className="font-bold text-slate-900">{r.student_name}</h2>
-                  <div className="text-xs text-slate-500 mt-0.5">
+                  <h2 className="font-bold text-slate-900 dark:text-slate-100">{r.student_name}</h2>
+                  <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                     {r.semester}
                     {r.class_name && <span> · {r.class_name}</span>}
                   </div>
                 </div>
                 <div className="flex gap-1">
-                  {wa && <a href={wa} target="_blank" rel="noreferrer" className="text-xs font-semibold px-2 py-1 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100">WA</a>}
-                  <button onClick={() => openEdit(r)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50">Edit</button>
-                  <button onClick={() => handleDelete(r)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50">Hapus</button>
+                  {wa && <a href={wa} target="_blank" rel="noreferrer" className="text-xs font-semibold px-2 py-1 rounded-lg text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20">WA</a>}
+                  <button onClick={() => openEdit(r)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10">Edit</button>
+                  <button onClick={() => handleDelete(r)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
                 </div>
               </div>
-              <p className="mt-3 text-sm text-slate-700 whitespace-pre-wrap">{r.body}</p>
+              <p className="mt-3 text-sm text-slate-700 dark:text-slate-300 whitespace-pre-wrap">{r.body}</p>
             </article>
           )
         })}
@@ -170,20 +170,23 @@ export default function RaporPage() {
       <Modal open={open} onClose={() => setOpen(false)} title={form.id ? "Edit Rapor" : "Buat Rapor"} size="lg">
         <form onSubmit={handleSave} className="grid gap-3">
           {!form.id && (
-            <label className="block">
-              <span className="block text-xs font-semibold text-slate-700 mb-1">Siswa *</span>
-              <select required value={form.studentId} onChange={(e) => setForm({ ...form, studentId: e.target.value ? Number(e.target.value) : "" })} className="input-base">
-                <option value="">— pilih siswa —</option>
-                {students.map((s) => <option key={s.id} value={s.id}>{s.name} {s.class_name ? `(${s.class_name})` : ""}</option>)}
-              </select>
-            </label>
+            <div>
+              <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Siswa *</span>
+              <Select
+                value={form.studentId === "" ? "" : String(form.studentId)}
+                onChange={(v) => setForm({ ...form, studentId: v ? Number(v) : "" })}
+                placeholder="— pilih siswa —"
+                required
+                options={students.map((s) => ({ value: String(s.id), label: s.name, hint: s.class_name || undefined }))}
+              />
+            </div>
           )}
           <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 mb-1">Semester *</span>
+            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Semester *</span>
             <input required value={form.semester} onChange={(e) => setForm({ ...form, semester: e.target.value })} placeholder="contoh: 2025/2026 Ganjil" className="input-base" />
           </label>
           <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 mb-1">Catatan Perkembangan *</span>
+            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Catatan Perkembangan *</span>
             <textarea
               required
               rows={10}

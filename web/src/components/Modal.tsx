@@ -31,13 +31,13 @@ export default function Modal({
   const sizeCls = size === "lg" ? "max-w-3xl" : size === "sm" ? "max-w-md" : "max-w-xl"
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40">
-      <div className={`w-full ${sizeCls} bg-white rounded-2xl shadow-xl ring-1 ring-slate-200 max-h-[92vh] flex flex-col`}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h2 className="font-semibold text-slate-900">{title}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 dark:bg-slate-950/70 backdrop-blur-sm">
+      <div className={`w-full ${sizeCls} bg-white rounded-2xl shadow-xl ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 dark:shadow-2xl max-h-[92vh] flex flex-col`}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-800">
+          <h2 className="font-semibold text-slate-900 dark:text-slate-100">{title}</h2>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500"
+            className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-200"
             aria-label="Tutup"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

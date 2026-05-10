@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import Logo from "./Logo"
+import { ThemeToggle } from "./ThemeProvider"
 
 const navLinks = [
   { href: "#fitur", label: "Fitur" },
@@ -25,7 +26,7 @@ export default function Header() {
     <header
       className={`sticky top-0 z-40 transition-all ${
         scrolled
-          ? "bg-white/85 backdrop-blur ring-1 ring-slate-200"
+          ? "bg-white/85 backdrop-blur ring-1 ring-slate-200 dark:bg-slate-950/85 dark:ring-slate-800"
           : "bg-transparent"
       }`}
     >
@@ -39,7 +40,7 @@ export default function Header() {
             <a
               key={l.href}
               href={l.href}
-              className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-primary-700 rounded-lg hover:bg-primary-50 transition"
+              className="px-3 py-2 text-sm font-medium text-slate-700 hover:text-primary-700 rounded-lg hover:bg-primary-50 transition dark:text-slate-300 dark:hover:text-primary-300 dark:hover:bg-slate-800"
             >
               {l.label}
             </a>
@@ -47,6 +48,7 @@ export default function Header() {
         </nav>
 
         <div className="hidden md:flex items-center gap-2">
+          <ThemeToggle />
           <Link to="/login" className="btn-ghost">
             Masuk
           </Link>
@@ -55,30 +57,33 @@ export default function Header() {
           </a>
         </div>
 
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="md:hidden p-2 rounded-lg hover:bg-slate-100"
-          aria-label="Buka menu"
-        >
-          <svg className="h-6 w-6 text-slate-700" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <div className="md:hidden flex items-center gap-1">
+          <ThemeToggle />
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800"
+            aria-label="Buka menu"
+          >
+          <svg className="h-6 w-6 text-slate-700 dark:text-slate-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
             {open ? (
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             ) : (
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 7h16M4 12h16M4 17h16" />
             )}
           </svg>
-        </button>
+          </button>
+        </div>
       </div>
 
       {open && (
-        <div className="md:hidden border-t border-slate-200 bg-white">
+        <div className="md:hidden border-t border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
           <div className="max-w-7xl mx-auto container-px py-3 flex flex-col gap-1">
             {navLinks.map((l) => (
               <a
                 key={l.href}
                 href={l.href}
                 onClick={() => setOpen(false)}
-                className="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-primary-50 rounded-lg"
+                className="px-3 py-2 text-sm font-medium text-slate-700 hover:bg-primary-50 rounded-lg dark:text-slate-300 dark:hover:bg-slate-800"
               >
                 {l.label}
               </a>

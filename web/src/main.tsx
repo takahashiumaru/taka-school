@@ -15,6 +15,7 @@ import PengumumanPage from './pages/PengumumanPage'
 import GaleriPage from './pages/GaleriPage'
 import RaporPage from './pages/RaporPage'
 import ProtectedRoute from './components/ProtectedRoute'
+import { ThemeProvider } from './components/ThemeProvider'
 
 const protectedRoutes: { path: string; element: React.ReactNode; admin?: boolean }[] = [
   { path: "/dashboard", element: <DashboardPage /> },
@@ -31,18 +32,20 @@ const protectedRoutes: { path: string; element: React.ReactNode; admin?: boolean
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-        {protectedRoutes.map((r) => (
-          <Route
-            key={r.path}
-            path={r.path}
-            element={<ProtectedRoute>{r.element}</ProtectedRoute>}
-          />
-        ))}
-      </Routes>
-    </BrowserRouter>
+    <ThemeProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          {protectedRoutes.map((r) => (
+            <Route
+              key={r.path}
+              path={r.path}
+              element={<ProtectedRoute>{r.element}</ProtectedRoute>}
+            />
+          ))}
+        </Routes>
+      </BrowserRouter>
+    </ThemeProvider>
   </StrictMode>,
 )

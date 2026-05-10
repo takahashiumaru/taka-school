@@ -34,7 +34,7 @@ const faqs = [
 export default function FAQ() {
   const [open, setOpen] = useState<number | null>(0)
   return (
-    <section id="faq" className="section bg-slate-50">
+    <section id="faq" className="section bg-slate-50 dark:bg-slate-900/40">
       <div className="max-w-3xl mx-auto container-px">
         <div className="text-center">
           <span className="eyebrow">FAQ</span>
@@ -50,8 +50,8 @@ export default function FAQ() {
             return (
               <div
                 key={f.q}
-                className={`rounded-2xl bg-white ring-1 transition ${
-                  isOpen ? "ring-primary-300 shadow-soft" : "ring-slate-200"
+                className={`rounded-2xl bg-white ring-1 transition dark:bg-slate-900 ${
+                  isOpen ? "ring-primary-300 shadow-soft dark:ring-primary-500/50" : "ring-slate-200 dark:ring-slate-800"
                 }`}
               >
                 <button
@@ -59,9 +59,9 @@ export default function FAQ() {
                   className="w-full flex items-center justify-between gap-4 text-left p-5"
                   aria-expanded={isOpen}
                 >
-                  <span className="font-semibold text-slate-900">{f.q}</span>
+                  <span className="font-semibold text-slate-900 dark:text-slate-100">{f.q}</span>
                   <svg
-                    className={`h-5 w-5 flex-none text-primary-600 transition ${isOpen ? "rotate-180" : ""}`}
+                    className={`h-5 w-5 flex-none text-primary-600 transition dark:text-primary-400 ${isOpen ? "rotate-180" : ""}`}
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
@@ -71,7 +71,7 @@ export default function FAQ() {
                   </svg>
                 </button>
                 {isOpen && (
-                  <div className="px-5 pb-5 -mt-1 text-slate-600">
+                  <div className="px-5 pb-5 -mt-1 text-slate-600 dark:text-slate-400">
                     {f.a}
                   </div>
                 )}
