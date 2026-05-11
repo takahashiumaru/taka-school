@@ -26,6 +26,71 @@ const STATEMENTS: string[] = [
     CONSTRAINT fk_users_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 
+  `CREATE TABLE IF NOT EXISTS education_levels (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_id INT UNSIGNED NOT NULL,
+    code VARCHAR(30) NOT NULL,
+    name VARCHAR(80) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_education_level (school_id, code),
+    CONSTRAINT fk_edu_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS grade_levels (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_id INT UNSIGNED NOT NULL,
+    education_level_id INT UNSIGNED NOT NULL,
+    code VARCHAR(30) NOT NULL,
+    name VARCHAR(80) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_grade_level (school_id, education_level_id, code),
+    CONSTRAINT fk_grade_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    CONSTRAINT fk_grade_edu FOREIGN KEY (education_level_id) REFERENCES education_levels(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS academic_years (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_id INT UNSIGNED NOT NULL,
+    name VARCHAR(30) NOT NULL,
+    start_date DATE NULL,
+    end_date DATE NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_academic_year (school_id, name),
+    CONSTRAINT fk_year_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS semesters (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_id INT UNSIGNED NOT NULL,
+    academic_year_id INT UNSIGNED NOT NULL,
+    name VARCHAR(40) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0,
+    start_date DATE NULL,
+    end_date DATE NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_semester (school_id, academic_year_id, name),
+    CONSTRAINT fk_sem_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    CONSTRAINT fk_sem_year FOREIGN KEY (academic_year_id) REFERENCES academic_years(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
+  `CREATE TABLE IF NOT EXISTS majors (
+    id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    school_id INT UNSIGNED NOT NULL,
+    education_level_id INT UNSIGNED NOT NULL,
+    name VARCHAR(80) NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uniq_major (school_id, education_level_id, name),
+    CONSTRAINT fk_major_school FOREIGN KEY (school_id) REFERENCES schools(id) ON DELETE CASCADE,
+    CONSTRAINT fk_major_edu FOREIGN KEY (education_level_id) REFERENCES education_levels(id) ON DELETE CASCADE
+  ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
+
   `CREATE TABLE IF NOT EXISTS classes (
     id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
     school_id INT UNSIGNED NOT NULL,
@@ -167,8 +232,35 @@ const STATEMENTS: string[] = [
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`,
 ]
 
+
+const ALTER_STATEMENTS: string[] = [
+  `ALTER TABLE classes ADD COLUMN education_level_id INT UNSIGNED NULL AFTER school_id`,
+  `ALTER TABLE classes ADD COLUMN grade_level_id INT UNSIGNED NULL AFTER education_level_id`,
+  `ALTER TABLE classes ADD COLUMN academic_year_id INT UNSIGNED NULL AFTER grade_level_id`,
+  `ALTER TABLE classes ADD COLUMN major_id INT UNSIGNED NULL AFTER homeroom_teacher_id`,
+  `ALTER TABLE students ADD COLUMN nisn VARCHAR(40) NULL AFTER nis`,
+  `ALTER TABLE students ADD COLUMN nickname VARCHAR(80) NULL AFTER name`,
+  `ALTER TABLE students ADD COLUMN birth_place VARCHAR(120) NULL AFTER gender`,
+  `ALTER TABLE students ADD COLUMN religion VARCHAR(60) NULL AFTER birth_date`,
+  `ALTER TABLE students ADD COLUMN blood_type VARCHAR(5) NULL AFTER address`,
+  `ALTER TABLE students ADD COLUMN allergies VARCHAR(255) NULL AFTER blood_type`,
+  `ALTER TABLE students ADD COLUMN medical_notes TEXT NULL AFTER allergies`,
+  `ALTER TABLE students ADD COLUMN emergency_contact_name VARCHAR(120) NULL AFTER medical_notes`,
+  `ALTER TABLE students ADD COLUMN emergency_contact_phone VARCHAR(30) NULL AFTER emergency_contact_name`,
+]
+
+async function safeQuery(sql: string) {
+  try { await pool.query(sql) } catch (e) {
+    const code = (e as { code?: string }).code
+    if (code !== "ER_DUP_FIELDNAME" && code !== "ER_CANT_CREATE_TABLE") throw e
+  }
+}
+
 export async function ensureSchema() {
   for (const sql of STATEMENTS) {
     await pool.query(sql)
+  }
+  for (const sql of ALTER_STATEMENTS) {
+    await safeQuery(sql)
   }
 }

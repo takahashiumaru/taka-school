@@ -18,6 +18,7 @@ import announcementsRoutes from "./routes/announcements.js"
 import galleriesRoutes from "./routes/galleries.js"
 import reportsRoutes from "./routes/reports.js"
 import uploadsRoutes from "./routes/uploads.js"
+import academicRoutes from "./routes/academic.js"
 import { ensureDemoData } from "./scripts/seed.js"
 
 const __filename = fileURLToPath(import.meta.url)
@@ -62,6 +63,7 @@ app.use("/api/announcements", announcementsRoutes)
 app.use("/api/galleries", galleriesRoutes)
 app.use("/api/reports", reportsRoutes)
 app.use("/api/uploads", uploadsRoutes)
+app.use("/api/academic", academicRoutes)
 
 const uploadsDir = path.resolve(process.cwd(), "uploads")
 app.use("/uploads", express.static(uploadsDir))

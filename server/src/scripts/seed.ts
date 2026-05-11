@@ -35,6 +35,38 @@ async function findOrCreateUser(
   return res.insertId
 }
 
+async function ensureAcademicFoundation(schoolId: number) {
+  const levels: Array<[string, string, number]> = [["paud", "PAUD", 1], ["tk", "TK", 2], ["sd", "SD", 3], ["smp", "SMP", 4], ["sma", "SMA", 5]]
+  const levelIds: Record<string, number> = {}
+  for (const [code, name, sort] of levels) {
+    await pool.query("INSERT IGNORE INTO education_levels (school_id, code, name, sort_order) VALUES (?, ?, ?, ?)", [schoolId, code, name, sort])
+    const [rows] = await pool.query<RowDataPacket[]>("SELECT id FROM education_levels WHERE school_id=? AND code=? LIMIT 1", [schoolId, code])
+    levelIds[code] = rows[0].id
+  }
+  const gradeDefs: Array<[string, string, string, number]> = [
+    ["paud", "paud-a", "PAUD A", 1], ["paud", "paud-b", "PAUD B", 2],
+    ["tk", "tk-a", "TK A", 1], ["tk", "tk-b", "TK B", 2],
+    ...[1,2,3,4,5,6].map((n) => ["sd", String(n), `Kelas ${n}`, n] as [string,string,string,number]),
+    ...[7,8,9].map((n) => ["smp", String(n), `Kelas ${n}`, n] as [string,string,string,number]),
+    ...[10,11,12].map((n) => ["sma", String(n), `Kelas ${n}`, n] as [string,string,string,number]),
+  ]
+  for (const [level, code, name, sort] of gradeDefs) {
+    await pool.query("INSERT IGNORE INTO grade_levels (school_id, education_level_id, code, name, sort_order) VALUES (?, ?, ?, ?, ?)", [schoolId, levelIds[level], code, name, sort])
+  }
+  const now = new Date()
+  const y = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1
+  const yearName = `${y}/${y + 1}`
+  await pool.query("INSERT IGNORE INTO academic_years (school_id, name, start_date, end_date, is_active) VALUES (?, ?, ?, ?, 1)", [schoolId, yearName, `${y}-07-01`, `${y+1}-06-30`])
+  const [yearRows] = await pool.query<RowDataPacket[]>("SELECT id FROM academic_years WHERE school_id=? AND name=? LIMIT 1", [schoolId, yearName])
+  const yearId = yearRows[0].id
+  await pool.query("INSERT IGNORE INTO semesters (school_id, academic_year_id, name, sort_order, start_date, end_date, is_active) VALUES (?, ?, 'Ganjil', 1, ?, ?, 1)", [schoolId, yearId, `${y}-07-01`, `${y}-12-31`])
+  await pool.query("INSERT IGNORE INTO semesters (school_id, academic_year_id, name, sort_order, start_date, end_date, is_active) VALUES (?, ?, 'Genap', 2, ?, ?, 0)", [schoolId, yearId, `${y+1}-01-01`, `${y+1}-06-30`])
+  for (const major of ["IPA", "IPS", "Bahasa"]) {
+    await pool.query("INSERT IGNORE INTO majors (school_id, education_level_id, name) VALUES (?, ?, ?)", [schoolId, levelIds.sma, major])
+  }
+  return { levelIds, yearId }
+}
+
 async function findOrCreateClass(
   schoolId: number,
   name: string,
@@ -213,6 +245,8 @@ export async function ensureDemoData() {
     "guru123",
     "guru",
   )
+
+  await ensureAcademicFoundation(schoolId)
 
   const classA = await findOrCreateClass(schoolId, "Kelas A - Apel", "TK A", guruAId)
   const classB = await findOrCreateClass(schoolId, "Kelas B - Beruang", "TK B", guruBId)
