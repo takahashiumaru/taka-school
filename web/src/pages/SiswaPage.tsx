@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react"
 import AppLayout from "../components/AppLayout"
 import Modal from "../components/Modal"
 import Select from "../components/Select"
+import ConfirmDialog from "../components/ConfirmDialog"
+import { AlertBox, EmptyState, TableSkeleton } from "../components/UiState"
 import {
   Classes,
   Students,
@@ -48,6 +50,8 @@ export default function SiswaPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState<FormState>(emptyForm)
   const [submitting, setSubmitting] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Student | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   async function refresh() {
     setLoading(true)
@@ -122,13 +126,17 @@ export default function SiswaPage() {
     }
   }
 
-  async function handleDelete(s: Student) {
-    if (!confirm(`Hapus siswa "${s.name}"?`)) return
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      await Students.delete(s.id)
+      await Students.delete(deleteTarget.id)
+      setDeleteTarget(null)
       refresh()
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Gagal menghapus")
+      setError(e instanceof Error ? e.message : "Gagal menghapus")
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -179,7 +187,7 @@ export default function SiswaPage() {
         />
       </div>
 
-      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">{error}</div>}
+      {error && <div className="mt-4"><AlertBox>{error}</AlertBox></div>}
 
       <div className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden dark:bg-slate-900 dark:ring-slate-800">
         <div className="overflow-x-auto">
@@ -196,11 +204,13 @@ export default function SiswaPage() {
               </tr>
             </thead>
             <tbody>
-              {loading && (
-                <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-500">Memuat…</td></tr>
-              )}
+              {loading && <TableSkeleton rows={5} cols={7} />}
               {!loading && filtered.length === 0 && (
-                <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-500">Belum ada data.</td></tr>
+                <tr>
+                  <td colSpan={7}>
+                    <EmptyState title="Belum ada data siswa" desc="Tambahkan siswa pertama atau ubah filter pencarian." action={<button onClick={openNew} className="btn-primary-sm">+ Tambah Siswa</button>} />
+                  </td>
+                </tr>
               )}
               {filtered.map((s) => (
                 <tr key={s.id} className="border-t border-slate-100 dark:border-slate-800">
@@ -232,7 +242,7 @@ export default function SiswaPage() {
                       </a>
                     )}
                     <button onClick={() => openEdit(s)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10 mr-1">Edit</button>
-                    <button onClick={() => handleDelete(s)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
+                    <button onClick={() => setDeleteTarget(s)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
                   </td>
                 </tr>
               ))}
@@ -298,6 +308,16 @@ export default function SiswaPage() {
           </div>
         </form>
       </Modal>
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Hapus siswa?"
+        message={`Data siswa ${deleteTarget?.name || "ini"} akan dihapus permanen beserta data terkait yang terhubung. Tindakan ini tidak bisa dibatalkan.`}
+        confirmLabel="Hapus Siswa"
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
+      />
     </AppLayout>
   )
 }

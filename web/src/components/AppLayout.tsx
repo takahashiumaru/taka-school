@@ -4,14 +4,14 @@ import Logo from "./Logo"
 import { clearAuth, getUser } from "../lib/api"
 import { ThemeToggle } from "./ThemeProvider"
 
-const NAV: { to: string; label: string; icon: string }[] = [
-  { to: "/dashboard", label: "Dashboard", icon: "M3 12l9-9 9 9M5 10v10h14V10" },
-  { to: "/siswa", label: "Data Siswa", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z" },
+const NAV: { to: string; label: string; shortLabel?: string; icon: string; mobile?: boolean }[] = [
+  { to: "/dashboard", label: "Dashboard", icon: "M3 12l9-9 9 9M5 10v10h14V10", mobile: true },
+  { to: "/siswa", label: "Data Siswa", shortLabel: "Siswa", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z", mobile: true },
   { to: "/guru", label: "Data Guru", icon: "M5 13l4 4L19 7" },
   { to: "/kelas", label: "Kelas", icon: "M3 7l9-4 9 4-9 4-9-4z M3 12l9 4 9-4" },
-  { to: "/absensi", label: "Absensi", icon: "M9 12l2 2 4-4M5 5h14v14H5z" },
+  { to: "/absensi", label: "Absensi", icon: "M9 12l2 2 4-4M5 5h14v14H5z", mobile: true },
   { to: "/jadwal", label: "Jadwal", icon: "M8 7V3m8 4V3M3 11h18M5 7h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z" },
-  { to: "/spp", label: "SPP", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v2" },
+  { to: "/spp", label: "SPP", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v2", mobile: true },
   { to: "/pengumuman", label: "Pengumuman", icon: "M11 5L6 9H2v6h4l5 4V5z M15.5 8a4 4 0 010 8" },
   { to: "/galeri", label: "Galeri", icon: "M4 16l4-4 4 4 8-8M4 6h16v12H4z" },
   { to: "/rapor", label: "Rapor", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" },

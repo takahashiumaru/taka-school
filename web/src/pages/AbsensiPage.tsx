@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import AppLayout from "../components/AppLayout"
 import Select from "../components/Select"
+import { AlertBox, EmptyState, TableSkeleton } from "../components/UiState"
 import {
   Attendance,
   Classes,
@@ -111,8 +112,8 @@ export default function AbsensiPage() {
         </div>
       </div>
 
-      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">{error}</div>}
-      {message && <div className="mt-4 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 text-emerald-700 text-sm p-3 dark:bg-emerald-500/10 dark:ring-emerald-500/30 dark:text-emerald-300">{message}</div>}
+      {error && <div className="mt-4"><AlertBox>{error}</AlertBox></div>}
+      {message && <div className="mt-4"><AlertBox type="success">{message}</AlertBox></div>}
 
       <div className="mt-4 grid grid-cols-4 gap-2 max-w-lg">
         <Counter label="Hadir" value={counts.hadir || 0} color="bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300" />
@@ -133,12 +134,20 @@ export default function AbsensiPage() {
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-500">Memuat…</td></tr>}
+              {loading && <TableSkeleton rows={5} cols={4} />}
               {!loading && classId && students.length === 0 && (
-                <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-500">Belum ada siswa di kelas ini.</td></tr>
+                <tr>
+                  <td colSpan={4}>
+                    <EmptyState title="Belum ada siswa di kelas ini" desc="Tambahkan siswa atau pindahkan siswa aktif ke kelas yang dipilih." />
+                  </td>
+                </tr>
               )}
               {!classId && (
-                <tr><td colSpan={4} className="px-4 py-6 text-center text-slate-500">Pilih kelas dulu.</td></tr>
+                <tr>
+                  <td colSpan={4}>
+                    <EmptyState title="Pilih kelas dulu" desc="Setelah kelas dipilih, daftar siswa akan muncul otomatis." />
+                  </td>
+                </tr>
               )}
               {students.map((s) => (
                 <tr key={s.id} className="border-t border-slate-100 dark:border-slate-800">

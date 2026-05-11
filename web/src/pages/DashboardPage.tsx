@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
+import { AlertBox, CardSkeleton } from "../components/UiState"
 import {
   fetchDashboard,
   getUser,
@@ -44,12 +45,8 @@ export default function DashboardPage() {
         Halo, <span className="font-semibold">{user.name}</span> — ringkasan operasional sekolahmu hari ini.
       </p>
 
-      {loading && <div className="mt-6 text-slate-500 dark:text-slate-400">Memuat data…</div>}
-      {error && (
-        <div className="mt-6 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">
-          {error}
-        </div>
-      )}
+      {loading && <div className="mt-6"><CardSkeleton count={3} /></div>}
+      {error && <div className="mt-6"><AlertBox>{error}</AlertBox></div>}
 
       {stats && (
         <>
@@ -58,6 +55,22 @@ export default function DashboardPage() {
             <Card title="Total Guru" value={stats.teachers} sub="aktif" color="from-violet-500 to-violet-700" to="/guru" />
             <Card title="Jumlah Kelas" value={stats.classes} sub="terdaftar" color="from-amber-500 to-amber-700" to="/kelas" />
           </div>
+
+          <section className="mt-6 rounded-2xl bg-white ring-1 ring-slate-200 p-5">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div>
+                <h2 className="font-semibold text-slate-900">Aksi Cepat</h2>
+                <p className="text-xs text-slate-500 mt-1">Shortcut kerja harian admin/guru biar nggak muter-muter.</p>
+              </div>
+            </div>
+            <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-5 gap-3">
+              <ActionButton to="/absensi" title="Input Absensi" desc="Tandai hadir hari ini" icon="✓" />
+              <ActionButton to="/spp" title="Buat Tagihan" desc="Generate SPP bulan ini" icon="Rp" />
+              <ActionButton to="/pengumuman" title="Kirim Pengumuman" desc="Info ke kelas/sekolah" icon="📣" />
+              <ActionButton to="/siswa" title="Tambah Siswa" desc="Lengkapi data murid" icon="+" />
+              <ActionButton to="/spp?status=belum" title="Reminder SPP" desc="Buka daftar belum bayar" icon="WA" />
+            </div>
+          </section>
 
           <div className="mt-6 grid lg:grid-cols-2 gap-4">
             <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-6 dark:bg-slate-900 dark:ring-slate-800">
@@ -158,6 +171,18 @@ function Pill({ label, value, color }: { label: string; value: number; color: st
       <div className="text-2xl font-bold">{value}</div>
       <div className="text-xs">{label}</div>
     </div>
+  )
+}
+
+function ActionButton({ to, title, desc, icon }: { to: string; title: string; desc: string; icon: string }) {
+  return (
+    <Link to={to} className="group rounded-2xl bg-slate-50 ring-1 ring-slate-200 p-4 hover:bg-primary-50 hover:ring-primary-200 transition">
+      <div className="h-10 w-10 rounded-xl bg-white ring-1 ring-slate-200 flex items-center justify-center text-sm font-bold text-primary-700 group-hover:ring-primary-200">
+        {icon}
+      </div>
+      <div className="mt-3 font-semibold text-slate-900 text-sm">{title}</div>
+      <div className="text-xs text-slate-500 mt-1 leading-relaxed">{desc}</div>
+    </Link>
   )
 }
 

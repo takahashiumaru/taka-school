@@ -3,6 +3,8 @@ import AppLayout from "../components/AppLayout"
 import Modal from "../components/Modal"
 import Select from "../components/Select"
 import MonthPicker from "../components/MonthPicker"
+import ConfirmDialog from "../components/ConfirmDialog"
+import { AlertBox, EmptyState, TableSkeleton } from "../components/UiState"
 import {
   Classes,
   Spp,
@@ -30,7 +32,7 @@ export default function SppPage() {
   const [classes, setClasses] = useState<Klass[]>([])
   const [students, setStudents] = useState<Student[]>([])
   const [period, setPeriod] = useState(currentPeriod())
-  const [statusFilter, setStatusFilter] = useState("")
+  const [statusFilter, setStatusFilter] = useState(() => new URLSearchParams(window.location.search).get("status") || "")
   const [classFilter, setClassFilter] = useState<number | "">("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -38,6 +40,8 @@ export default function SppPage() {
   const [payOpen, setPayOpen] = useState<SppInvoice | null>(null)
   const [createOpen, setCreateOpen] = useState(false)
   const [submitting, setSubmitting] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<SppInvoice | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   async function refresh() {
     setLoading(true)
@@ -66,13 +70,17 @@ export default function SppPage() {
     refresh()
   }, [period, statusFilter, classFilter])
 
-  async function handleDelete(inv: SppInvoice) {
-    if (!confirm(`Hapus tagihan ${inv.student_name} (${inv.period})?`)) return
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      await Spp.delete(inv.id)
+      await Spp.delete(deleteTarget.id)
+      setDeleteTarget(null)
       refresh()
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Gagal")
+      setError(e instanceof Error ? e.message : "Gagal menghapus")
+    } finally {
+      setDeleting(false)
     }
   }
 
@@ -120,7 +128,7 @@ export default function SppPage() {
         </div>
       </div>
 
-      {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">{error}</div>}
+      {error && <div className="mt-4"><AlertBox>{error}</AlertBox></div>}
 
       <div className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden dark:bg-slate-900 dark:ring-slate-800">
         <div className="overflow-x-auto">
@@ -138,8 +146,14 @@ export default function SppPage() {
               </tr>
             </thead>
             <tbody>
-              {loading && <tr><td colSpan={8} className="px-4 py-6 text-center text-slate-500">Memuat…</td></tr>}
-              {!loading && items.length === 0 && <tr><td colSpan={8} className="px-4 py-6 text-center text-slate-500">Belum ada tagihan.</td></tr>}
+              {loading && <TableSkeleton rows={5} cols={8} />}
+              {!loading && items.length === 0 && (
+                <tr>
+                  <td colSpan={8}>
+                    <EmptyState title="Belum ada tagihan" desc="Generate tagihan SPP untuk siswa aktif atau ubah filter periode/status." action={<button onClick={() => setBatchOpen(true)} className="btn-primary-sm">+ Generate Tagihan</button>} />
+                  </td>
+                </tr>
+              )}
               {items.map((inv) => (
                 <tr key={inv.id} className="border-t border-slate-100 dark:border-slate-800">
                   <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{inv.student_name}</td>
@@ -161,7 +175,7 @@ export default function SppPage() {
                     <button onClick={() => setPayOpen(inv)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10 mr-1">
                       {inv.status === "lunas" ? "Detail" : "Bayar"}
                     </button>
-                    <button onClick={() => handleDelete(inv)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
+                    <button onClick={() => setDeleteTarget(inv)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
                   </td>
                 </tr>
               ))}
@@ -194,6 +208,16 @@ export default function SppPage() {
         invoice={payOpen}
         onClose={() => setPayOpen(null)}
         onSuccess={() => { setPayOpen(null); refresh() }}
+      />
+
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Hapus tagihan SPP?"
+        message={`Tagihan ${deleteTarget?.student_name || "siswa"} periode ${deleteTarget?.period || "ini"} akan dihapus permanen. Riwayat status pembayaran pada tagihan ini ikut hilang.`}
+        confirmLabel="Hapus Tagihan"
+        loading={deleting}
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={confirmDelete}
       />
     </AppLayout>
   )
