@@ -3,6 +3,7 @@ import { z } from "zod"
 import type { RowDataPacket, ResultSetHeader } from "mysql2"
 import { pool } from "../db.js"
 import { requireOffice, requireSchoolRead } from "../auth.js"
+import { parsePagination, paginationMeta } from "../pagination.js"
 
 const router = Router()
 
@@ -44,6 +45,7 @@ router.get("/", async (req, res) => {
   const q = (req.query.q as string | undefined)?.trim() || ""
   const classId = req.query.classId ? Number(req.query.classId) : null
   const status = (req.query.status as string | undefined) || ""
+  const { page, pageSize, limit, offset } = parsePagination(req.query)
 
   const where: string[] = ["s.school_id = ?"]
   const params: unknown[] = [schoolId]
@@ -61,14 +63,25 @@ router.get("/", async (req, res) => {
     params.push(status)
   }
 
+  const whereClause = where.join(" AND ")
+
+  const [[{ total }]] = await pool.query<RowDataPacket[]>(
+    `SELECT COUNT(*) as total FROM students s WHERE ${whereClause}`,
+    params
+  )
+
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT s.*, c.name AS class_name FROM students s
      LEFT JOIN classes c ON c.id = s.class_id
-     WHERE ${where.join(" AND ")}
-     ORDER BY s.name ASC LIMIT 500`,
-    params,
+     WHERE ${whereClause}
+     ORDER BY s.name ASC LIMIT ? OFFSET ?`,
+    [...params, limit, offset],
   )
-  res.json({ items: rows })
+
+  res.json({
+    items: rows,
+    pagination: paginationMeta(Number(total), page, pageSize),
+  })
 })
 
 router.get("/:id", async (req, res) => {

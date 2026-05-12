@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
 import Select from "../components/Select"
+import Pagination from "../components/Pagination"
 import ConfirmDialog from "../components/ConfirmDialog"
 import { AlertBox, EmptyState, TableSkeleton } from "../components/UiState"
+import { usePagination } from "../hooks/usePagination"
 import {
   Classes,
   Students,
@@ -11,11 +13,13 @@ import {
   waLink,
   type Klass,
   type Student,
+  type PaginationMeta,
 } from "../lib/api"
 
 export default function SiswaPage() {
   const user = getUser()
   const [items, setItems] = useState<Student[]>([])
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
   const [classes, setClasses] = useState<Klass[]>([])
   const [q, setQ] = useState("")
   const [filterClass, setFilterClass] = useState<number | "">("")
@@ -24,6 +28,10 @@ export default function SiswaPage() {
   const [error, setError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Student | null>(null)
   const [deleting, setDeleting] = useState(false)
+
+  const { page, pageSize, setPage, setPageSize } = usePagination({
+    resetDeps: [q, filterClass, filterStatus],
+  })
 
   async function refresh() {
     setLoading(true)
@@ -34,10 +42,13 @@ export default function SiswaPage() {
           q: q || undefined,
           classId: filterClass || undefined,
           status: filterStatus || undefined,
+          page,
+          pageSize,
         }),
         Classes.list(),
       ])
       setItems(s.items)
+      setPagination(s.pagination)
       setClasses(c.items)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal memuat data")
@@ -48,7 +59,7 @@ export default function SiswaPage() {
 
   useEffect(() => {
     refresh()
-  }, [filterClass, filterStatus])
+  }, [page, pageSize, q, filterClass, filterStatus])
 
   async function confirmDelete() {
     if (!deleteTarget) return
@@ -64,17 +75,6 @@ export default function SiswaPage() {
     }
   }
 
-  const filtered = useMemo(() => {
-    if (!q) return items
-    const needle = q.toLowerCase()
-    return items.filter(
-      (s) =>
-        s.name.toLowerCase().includes(needle) ||
-        (s.nis ?? "").toLowerCase().includes(needle) ||
-        (s.parent_name ?? "").toLowerCase().includes(needle),
-    )
-  }, [items, q])
-
   if (!user) return null
 
   return (
@@ -82,7 +82,9 @@ export default function SiswaPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Data Siswa</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{filtered.length} siswa ditampilkan</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+            {pagination ? `${pagination.total} siswa` : "Memuat..."}
+          </p>
         </div>
         <Link to="/siswa/baru" className="btn-primary">+ Tambah Siswa</Link>
       </div>
@@ -115,12 +117,12 @@ export default function SiswaPage() {
 
       <div className="mt-5 grid gap-3 md:hidden">
         {loading && <TableSkeleton rows={4} cols={2} />}
-        {!loading && filtered.length === 0 && (
+        {!loading && items.length === 0 && (
           <div className="rounded-2xl bg-white ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
             <EmptyState title="Belum ada data siswa" desc="Tambahkan siswa pertama atau ubah filter pencarian." action={<Link to="/siswa/baru" className="btn-primary-sm">+ Tambah Siswa</Link>} />
           </div>
         )}
-        {filtered.map((s) => (
+        {!loading && items.map((s) => (
           <div key={s.id} className="rounded-2xl bg-white ring-1 ring-slate-200 p-4 dark:bg-slate-900 dark:ring-slate-800">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -171,14 +173,14 @@ export default function SiswaPage() {
             </thead>
             <tbody>
               {loading && <TableSkeleton rows={5} cols={7} />}
-              {!loading && filtered.length === 0 && (
+              {!loading && items.length === 0 && (
                 <tr>
                   <td colSpan={7}>
                     <EmptyState title="Belum ada data siswa" desc="Tambahkan siswa pertama atau ubah filter pencarian." action={<Link to="/siswa/baru" className="btn-primary-sm">+ Tambah Siswa</Link>} />
                   </td>
                 </tr>
               )}
-              {filtered.map((s) => (
+              {!loading && items.map((s) => (
                 <tr key={s.id} className="border-t border-slate-100 dark:border-slate-800">
                   <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{s.name}</td>
                   <td className="px-4 py-3 text-slate-600 dark:text-slate-400">{s.nis || "—"}</td>
@@ -216,6 +218,17 @@ export default function SiswaPage() {
             </tbody>
           </table>
         </div>
+        {pagination && (
+          <Pagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={pagination.total}
+            totalPages={pagination.totalPages}
+            loading={loading}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        )}
       </div>
 
       <ConfirmDialog

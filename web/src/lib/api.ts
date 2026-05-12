@@ -13,6 +13,30 @@ export type AuthUser = {
   schoolName: string
 }
 
+export type PaginationMeta = {
+  page: number
+  pageSize: number
+  total: number
+  totalPages: number
+}
+
+export type PaginatedResponse<T> = {
+  items: T[]
+  pagination: PaginationMeta
+}
+
+export type PaginationParams = {
+  page?: number
+  pageSize?: number
+}
+
+export function buildPaginationQuery(params: PaginationParams): URLSearchParams {
+  const q = new URLSearchParams()
+  if (params.page) q.set("page", String(params.page))
+  if (params.pageSize) q.set("pageSize", String(params.pageSize))
+  return q
+}
+
 export function getToken(): string | null {
   return localStorage.getItem(TOKEN_KEY)
 }
@@ -386,13 +410,15 @@ export type PaudObservation = { id: number; student_id: number; student_name: st
 export type ReportCard = { id: number; student_id: number; student_name: string; class_name: string | null; semester_label: string; status: "draft" | "published"; summary: string | null; updated_at: string }
 
 export const Students = {
-  list: (params?: { q?: string; classId?: number; status?: string }) => {
+  list: (params?: { q?: string; classId?: number; status?: string; page?: number; pageSize?: number }) => {
     const q = new URLSearchParams()
     if (params?.q) q.set("q", params.q)
     if (params?.classId) q.set("classId", String(params.classId))
     if (params?.status) q.set("status", params.status)
+    if (params?.page) q.set("page", String(params.page))
+    if (params?.pageSize) q.set("pageSize", String(params.pageSize))
     const s = q.toString()
-    return apiFetch<{ items: Student[] }>(`/api/students${s ? `?${s}` : ""}`)
+    return apiFetch<PaginatedResponse<Student>>(`/api/students${s ? `?${s}` : ""}`)
   },
   get: (id: number) => apiFetch<Student>(`/api/students/${id}`),
   create: (data: Partial<Student> & { name: string; classId?: number | null; parentWa?: string | null; parentName?: string | null; nis?: string | null; gender?: "L" | "P" | null; birthDate?: string | null; address?: string | null; photoUrl?: string | null; status?: "aktif" | "lulus" | "keluar" }) =>
