@@ -2,6 +2,7 @@ import { useEffect, useState } from "react"
 import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
 import Select from "../components/Select"
+import TimePicker from "../components/TimePicker"
 import { Classes, Schedules, Teachers, type Klass, type Teacher } from "../lib/api"
 
 const DAYS = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
@@ -53,7 +54,7 @@ export default function JadwalFormPage() {
     {loading ? <div className="mt-5 text-slate-500 dark:text-slate-400">Memuat…</div> : <form onSubmit={handleSubmit} className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 p-5 grid gap-4 dark:bg-slate-900 dark:ring-slate-800">
       <div><span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kelas *</span><Select required value={form.classId} onChange={(v)=>setForm({...form,classId:v})} options={classes.map(c=>({value:String(c.id),label:c.name}))} /></div>
       <div><span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Hari</span><Select value={String(form.dayOfWeek)} onChange={(v)=>setForm({...form,dayOfWeek:Number(v)})} options={DAYS.map((d,i)=>({value:String(i+1),label:d}))} /></div>
-      <div className="grid grid-cols-2 gap-3"><label><span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Mulai</span><input type="time" required value={form.startTime} onChange={(e)=>setForm({...form,startTime:e.target.value})} className="input-base" /></label><label><span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Selesai</span><input type="time" required value={form.endTime} onChange={(e)=>setForm({...form,endTime:e.target.value})} className="input-base" /></label></div>
+      <div className="grid grid-cols-2 gap-3"><div><span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Mulai</span><TimePicker required value={form.startTime} onChange={(v)=>setForm({...form,startTime:v})} /></div><div><span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Selesai</span><TimePicker required value={form.endTime} onChange={(v)=>setForm({...form,endTime:v})} /></div></div>
       <label><span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Mata Pelajaran / Aktivitas *</span><input required value={form.subject} onChange={(e)=>setForm({...form,subject:e.target.value})} className="input-base" /></label>
       <div><span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Guru</span><Select value={form.teacherId} onChange={(v)=>setForm({...form,teacherId:v})} options={[{value:"",label:"— belum ditentukan —"},...teachers.map(t=>({value:String(t.id),label:t.name}))]} /></div>
       <div className="flex justify-end gap-2"><Link to="/jadwal" className="btn-secondary">Batal</Link><button disabled={submitting} className="btn-primary disabled:opacity-50">{submitting ? "Menyimpan…" : "Simpan"}</button></div>
