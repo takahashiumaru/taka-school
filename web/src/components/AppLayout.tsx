@@ -49,7 +49,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useLayoutEffect(() => {
     const nav = navRef.current
     if (!nav) return
-    nav.scrollTop = sidebarScrollRef.current
+    const restore = () => {
+      nav.scrollTop = sidebarScrollRef.current
+    }
+    restore()
+    const raf = requestAnimationFrame(restore)
+    const timer = window.setTimeout(restore, 80)
+    return () => {
+      cancelAnimationFrame(raf)
+      window.clearTimeout(timer)
+    }
   }, [location.pathname])
 
   useEffect(() => {
@@ -85,7 +94,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           open ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
-        <div className="h-16 flex items-center justify-between gap-3 px-5 border-b border-slate-100 dark:border-slate-800">
+        <div className="h-14 flex items-center justify-between gap-3 px-5 border-b border-slate-100 dark:border-slate-800">
           <Link to="/dashboard" onClick={closeMobileMenu}>
             <Logo />
           </Link>
@@ -100,13 +109,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </svg>
           </button>
         </div>
-        <nav ref={navRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 pb-8 overscroll-contain">
+        <nav ref={navRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-2 pb-6 overscroll-contain">
           {GROUPS.map((group) => {
             const items = visible.filter((n) => n.group === group)
             if (items.length === 0) return null
             return (
-              <div key={group} className="mb-5 last:mb-0">
-                <div className="px-3 pb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+              <div key={group} className="mb-2.5 last:mb-0">
+                <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
                   {group}
                 </div>
                 <div className="space-y-1">
@@ -117,7 +126,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       onClick={closeMobileMenu}
                       end={n.to === "/dashboard"}
                       className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                        `flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
                           isActive
                             ? "bg-primary-50 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300"
                             : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
