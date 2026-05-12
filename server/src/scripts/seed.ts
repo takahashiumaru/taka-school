@@ -415,7 +415,9 @@ export async function ensureDemoData() {
   ]
   
   for (const gallery of galleries) {
-    const galleryId = await insert("INSERT INTO galleries (school_id, title, description, event_date) VALUES (?, ?, ?, ?)", [schoolId, gallery.title, gallery.description, gallery.eventDate])
+    // Set cover_url to first photo
+    const coverUrl = gallery.photos[0]
+    const galleryId = await insert("INSERT INTO galleries (school_id, title, description, cover_url, event_date) VALUES (?, ?, ?, ?, ?)", [schoolId, gallery.title, gallery.description, coverUrl, gallery.eventDate])
     
     for (let j = 0; j < gallery.photos.length; j += 1) {
       const caption = `${gallery.title} - Foto ${j + 1}`
