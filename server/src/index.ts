@@ -29,6 +29,7 @@ import userLinksRoutes from "./routes/userLinks.js"
 import importExportRoutes from "./routes/importExport.js"
 import aiRoutes from "./routes/ai.js"
 import saasRoutes from "./routes/saas.js"
+import mapsRoutes from "./routes/maps.js"
 import { ensureDemoData } from "./scripts/seed.js"
 
 const __filename = fileURLToPath(import.meta.url)
@@ -96,6 +97,7 @@ app.use("/api/user-links", userLinksRoutes)
 app.use("/api/import-export", importExportRoutes)
 app.use("/api/ai", aiRoutes)
 app.use("/api/saas", saasRoutes)
+app.use("/api/maps", mapsRoutes)
 
 const uploadsDir = path.resolve(process.cwd(), "uploads")
 app.use(
