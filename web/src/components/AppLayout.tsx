@@ -19,6 +19,7 @@ type NavItem = {
 
 const GROUPS: NavGroup[] = ["Utama", "Master Data", "Operasional", "Keuangan", "Publikasi", "Sistem"]
 const SIDEBAR_SCROLL_KEY = "takaschool.sidebar.scrollTop"
+const SIDEBAR_COLLAPSED_KEY = "takaschool.sidebar.collapsed"
 let persistedSidebarScroll = 0
 let suppressSidebarSaveUntil = 0
 
@@ -46,6 +47,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)
+  const [collapsed, setCollapsed] = useState(() => {
+    const stored = window.localStorage.getItem(SIDEBAR_COLLAPSED_KEY)
+    return stored === "true"
+  })
   const navRef = useRef<HTMLElement>(null)
   useLayoutEffect(() => {
     const nav = navRef.current
@@ -91,6 +96,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   const visible = NAV.filter((n) => !n.show || n.show(user.role))
 
+  function toggleCollapsed() {
+    const newState = !collapsed
+    setCollapsed(newState)
+    window.localStorage.setItem(SIDEBAR_COLLAPSED_KEY, String(newState))
+  }
+
   function rememberSidebarScroll() {
     if (!navRef.current) return
     persistedSidebarScroll = navRef.current.scrollTop
@@ -111,14 +122,31 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-64 flex-col bg-white ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 transform transition-transform ${
+        className={`fixed inset-y-0 left-0 z-40 flex h-screen flex-col bg-white ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 transform transition-all duration-300 ${
+          collapsed ? "w-16" : "w-64"
+        } ${
           open ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
         <div className="h-16 flex items-center justify-between gap-3 px-5 border-b border-slate-100 dark:border-slate-800">
-          <Link to="/dashboard" onClick={closeMobileMenu}>
+          <Link to="/dashboard" onClick={closeMobileMenu} className={collapsed ? "hidden" : ""}>
             <Logo />
           </Link>
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            className="hidden lg:inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              {collapsed ? (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+              ) : (
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+              )}
+            </svg>
+          </button>
           <button
             type="button"
             onClick={closeMobileMenu}
@@ -136,9 +164,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             if (items.length === 0) return null
             return (
               <div key={group} className="mb-5 last:mb-0">
-                <div className="px-3 pb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
-                  {group}
-                </div>
+                {!collapsed && (
+                  <div className="px-3 pb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                    {group}
+                  </div>
+                )}
                 <div className="space-y-1">
                   {items.map((n) => (
                     <NavLink
@@ -147,18 +177,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                       onMouseDown={(e) => e.preventDefault()}
                       onClick={closeMobileMenu}
                       end={n.to === "/dashboard"}
+                      title={collapsed ? n.label : undefined}
                       className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                        `flex items-center gap-3 rounded-lg text-sm font-medium transition ${
+                          collapsed ? "justify-center px-2 py-2" : "px-3 py-2"
+                        } ${
                           isActive
                             ? "bg-primary-50 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300"
                             : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
                         }`
                       }
                     >
-                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="h-5 w-5 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path strokeLinecap="round" strokeLinejoin="round" d={n.icon} />
                       </svg>
-                      {n.label}
+                      {!collapsed && <span>{n.label}</span>}
                     </NavLink>
                   ))}
                 </div>
@@ -175,7 +208,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      <div className="min-w-0 lg:ml-64 flex min-h-screen flex-col">
+      <div className={`min-w-0 flex min-h-screen flex-col transition-all duration-300 ${collapsed ? "lg:ml-16" : "lg:ml-64"}`}>
         <header className="bg-white ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 sticky top-0 z-20">
           <div className="h-16 flex items-center justify-between px-4 sm:px-6">
             <button
