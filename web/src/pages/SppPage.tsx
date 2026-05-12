@@ -32,7 +32,6 @@ export default function SppPage() {
   const user = getUser()
   const [items, setItems] = useState<SppInvoice[]>([])
   const [financeItems, setFinanceItems] = useState<FinanceInvoice[]>([])
-  const [summary, setSummary] = useState<{ invoices: number; billed: number; paid: number; outstanding: number; overdue_count: number } | null>(null)
   const [classes, setClasses] = useState<Klass[]>([])
 
   const [period, setPeriod] = useState(currentPeriod())
@@ -48,7 +47,7 @@ export default function SppPage() {
     setLoading(true)
     setError(null)
     try {
-      const [s, f, sum, c] = await Promise.all([
+      const [s, f, c] = await Promise.all([
         Spp.list({
           period: period || undefined,
           status: statusFilter || undefined,
@@ -59,12 +58,10 @@ export default function SppPage() {
           status: statusFilter === "lunas" ? "paid" : statusFilter === "belum" ? "unpaid" : statusFilter === "sebagian" ? "partial" : statusFilter === "lewat" ? "overdue" : undefined,
           classId: classFilter || undefined,
         }).catch(() => ({ items: [] })),
-        Finance.summary().catch(() => null),
         Classes.list(),
       ])
       setItems(s.items)
       setFinanceItems(f.items)
-      setSummary(sum)
       setClasses(c.items)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal memuat")
@@ -90,6 +87,19 @@ export default function SppPage() {
       setDeleting(false)
     }
   }
+
+  const sppSummary = items.reduce(
+    (acc, inv) => {
+      const amount = Number(inv.amount) || 0
+      const paid = Number(inv.paid_amount) || 0
+      acc.billed += amount
+      acc.paid += paid
+      acc.outstanding += Math.max(amount - paid, 0)
+      if (inv.status === "lewat" || (inv.status !== "lunas" && inv.due_date.slice(0, 10) < new Date().toISOString().slice(0, 10))) acc.overdue_count += 1
+      return acc
+    },
+    { billed: 0, paid: 0, outstanding: 0, overdue_count: 0 },
+  )
 
   if (!user) return null
 
@@ -135,14 +145,12 @@ export default function SppPage() {
         </div>
       </div>
 
-      {summary && (
-        <div className="mt-5 grid sm:grid-cols-4 gap-3">
-          <SummaryCard label="Total Tagihan" value={formatRp(summary.billed)} />
-          <SummaryCard label="Terbayar" value={formatRp(summary.paid)} tone="emerald" />
-          <SummaryCard label="Sisa Piutang" value={formatRp(summary.outstanding)} tone="amber" />
-          <SummaryCard label="Overdue" value={`${summary.overdue_count || 0} invoice`} tone="rose" />
-        </div>
-      )}
+      <div className="mt-5 grid sm:grid-cols-4 gap-3">
+        <SummaryCard label="Total Tagihan" value={formatRp(sppSummary.billed)} />
+        <SummaryCard label="Terbayar" value={formatRp(sppSummary.paid)} tone="emerald" />
+        <SummaryCard label="Sisa Piutang" value={formatRp(sppSummary.outstanding)} tone="amber" />
+        <SummaryCard label="Overdue" value={`${sppSummary.overdue_count || 0} invoice`} tone="rose" />
+      </div>
 
       {financeItems.length > 0 && (
         <div className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden dark:bg-slate-900 dark:ring-slate-800">
