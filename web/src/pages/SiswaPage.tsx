@@ -30,8 +30,19 @@ export default function SiswaPage() {
   const [deleting, setDeleting] = useState(false)
 
   const { page, pageSize, setPage, setPageSize } = usePagination({
-    resetDeps: [q, filterClass, filterStatus],
+    resetDeps: [filterClass, filterStatus],
   })
+
+  const [debouncedQ, setDebouncedQ] = useState(q)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQ(q), 400)
+    return () => clearTimeout(timer)
+  }, [q])
+
+  useEffect(() => {
+    setPage(1)
+  }, [debouncedQ])
 
   async function refresh() {
     setLoading(true)
@@ -39,7 +50,7 @@ export default function SiswaPage() {
     try {
       const [s, c] = await Promise.all([
         Students.list({
-          q: q || undefined,
+          q: debouncedQ || undefined,
           classId: filterClass || undefined,
           status: filterStatus || undefined,
           page,
@@ -59,7 +70,7 @@ export default function SiswaPage() {
 
   useEffect(() => {
     refresh()
-  }, [page, pageSize, q, filterClass, filterStatus])
+  }, [page, pageSize, debouncedQ, filterClass, filterStatus])
 
   async function confirmDelete() {
     if (!deleteTarget) return
@@ -156,6 +167,20 @@ export default function SiswaPage() {
           </div>
         ))}
       </div>
+
+      {pagination && (
+        <div className="mt-4 md:hidden">
+          <Pagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={pagination.total}
+            totalPages={pagination.totalPages}
+            loading={loading}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        </div>
+      )}
 
       <div className="mt-5 hidden rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden dark:bg-slate-900 dark:ring-slate-800 md:block">
         <div className="overflow-x-auto">
