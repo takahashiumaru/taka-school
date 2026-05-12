@@ -113,7 +113,7 @@ export default function Select({
         aria-expanded={open}
         onClick={() => !disabled && setOpen((v) => !v)}
         onKeyDown={onKey}
-        className={`w-full ${sizeCls} rounded-lg ring-1 ring-slate-200 bg-white text-left text-slate-900 focus:ring-2 focus:ring-primary-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 dark:bg-slate-900 dark:ring-slate-700 dark:text-slate-100 dark:focus:ring-primary-600 transition-colors`}
+        className={`w-full ${sizeCls} rounded-xl ring-1 ring-slate-200 bg-white/95 text-left text-slate-900 shadow-sm hover:ring-primary-200 focus:ring-2 focus:ring-primary-300 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 dark:bg-slate-950/80 dark:ring-slate-700 dark:text-slate-100 dark:hover:ring-primary-500/40 dark:focus:ring-primary-600 transition-all`}
       >
         {leadingIcon && <span className="text-slate-400 dark:text-slate-500 shrink-0">{leadingIcon}</span>}
         <span className={`flex-1 truncate ${selected ? "" : "text-slate-400 dark:text-slate-500"}`}>
@@ -124,7 +124,7 @@ export default function Select({
         </svg>
       </button>
       {open && (
-        <div className="absolute left-0 right-0 z-30 mt-1 rounded-xl bg-white ring-1 ring-slate-200 shadow-lg p-1 max-h-64 overflow-auto dark:bg-slate-900 dark:ring-slate-700 dark:shadow-2xl">
+        <div className="absolute left-0 right-0 z-50 mt-2 max-h-64 overflow-auto rounded-2xl bg-white/95 p-1.5 shadow-2xl ring-1 ring-slate-200 backdrop-blur dark:bg-slate-900/95 dark:ring-slate-700">
           {options.length === 0 ? (
             <div className="px-3 py-2 text-sm text-slate-400 dark:text-slate-500">{emptyText}</div>
           ) : (
