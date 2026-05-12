@@ -5,23 +5,37 @@ import { clearAuth, getUser } from "../lib/api"
 import { can, roleLabels } from "../lib/permissions"
 import { ThemeToggle } from "./ThemeProvider"
 
-const NAV: { to: string; label: string; shortLabel?: string; icon: string; mobile?: boolean; show?: (role: NonNullable<ReturnType<typeof getUser>>["role"]) => boolean }[] = [
-  { to: "/dashboard", label: "Dashboard", icon: "M3 12l9-9 9 9M5 10v10h14V10", mobile: true },
-  { to: "/portal", label: "Portal", icon: "M4 6h16M4 12h16M4 18h7", mobile: true, show: (r) => ["teacher", "guru", "parent", "student"].includes(r) },
-  { to: "/siswa", label: "Data Siswa", shortLabel: "Siswa", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z", mobile: true, show: can.readSchoolData },
-  { to: "/guru", label: "Data Guru", icon: "M5 13l4 4L19 7", show: can.readSchoolData },
-  { to: "/kelas", label: "Kelas", icon: "M3 7l9-4 9 4-9 4-9-4z M3 12l9 4 9-4", show: can.readSchoolData },
-  { to: "/absensi", label: "Absensi", icon: "M9 12l2 2 4-4M5 5h14v14H5z", mobile: true, show: (r) => ["admin", "staff", "teacher", "guru"].includes(r) },
-  { to: "/jadwal", label: "Jadwal", icon: "M8 7V3m8 4V3M3 11h18M5 7h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z", show: can.readSchoolData },
-  { to: "/spp", label: "SPP", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v2", mobile: true, show: can.readSchoolData },
-  { to: "/pengumuman", label: "Pengumuman", icon: "M11 5L6 9H2v6h4l5 4V5z M15.5 8a4 4 0 010 8" },
-  { to: "/galeri", label: "Galeri", icon: "M4 16l4-4 4 4 8-8M4 6h16v12H4z" },
-  { to: "/rapor", label: "Rapor", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" },
-  { to: "/operasional", label: "Operasional", icon: "M4 21V7l8-4 8 4v14M9 21v-6h6v6", show: (r) => ["admin", "staff", "teacher", "guru", "headmaster"].includes(r) },
-  { to: "/akademik", label: "Akademik", icon: "M12 6v12M6 12h12M4 4h16v16H4z", show: can.manageAdminData },
-  { to: "/admissions", label: "PPDB", icon: "M9 12h6m-6 4h6M7 4h10l2 4v12H5V8l2-4z", show: (r) => ["admin", "staff"].includes(r) },
-  { to: "/import-export", label: "Import/Export", icon: "M4 7h16M4 12h16M4 17h16M8 3v18m8-18v18", show: (r) => ["admin", "staff"].includes(r) },
-  { to: "/ai-saas", label: "AI & SaaS", icon: "M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3z", show: (r) => ["admin", "staff", "headmaster"].includes(r) },
+type NavGroup = "Utama" | "Master Data" | "Operasional" | "Keuangan" | "Publikasi" | "Sistem"
+
+type NavItem = {
+  to: string
+  label: string
+  shortLabel?: string
+  icon: string
+  group: NavGroup
+  mobile?: boolean
+  show?: (role: NonNullable<ReturnType<typeof getUser>>["role"]) => boolean
+}
+
+const GROUPS: NavGroup[] = ["Utama", "Master Data", "Operasional", "Keuangan", "Publikasi", "Sistem"]
+
+const NAV: NavItem[] = [
+  { to: "/dashboard", label: "Dashboard", icon: "M3 12l9-9 9 9M5 10v10h14V10", group: "Utama", mobile: true },
+  { to: "/portal", label: "Portal", icon: "M4 6h16M4 12h16M4 18h7", group: "Utama", mobile: true, show: (r) => ["teacher", "guru", "parent", "student"].includes(r) },
+  { to: "/siswa", label: "Data Siswa", shortLabel: "Siswa", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z", group: "Master Data", mobile: true, show: can.readSchoolData },
+  { to: "/guru", label: "Data Guru", icon: "M5 13l4 4L19 7", group: "Master Data", show: can.readSchoolData },
+  { to: "/kelas", label: "Kelas", icon: "M3 7l9-4 9 4-9 4-9-4z M3 12l9 4 9-4", group: "Master Data", show: can.readSchoolData },
+  { to: "/admissions", label: "PPDB", icon: "M9 12h6m-6 4h6M7 4h10l2 4v12H5V8l2-4z", group: "Master Data", show: (r) => ["admin", "staff"].includes(r) },
+  { to: "/absensi", label: "Absensi", icon: "M9 12l2 2 4-4M5 5h14v14H5z", group: "Operasional", mobile: true, show: (r) => ["admin", "staff", "teacher", "guru"].includes(r) },
+  { to: "/jadwal", label: "Jadwal", icon: "M8 7V3m8 4V3M3 11h18M5 7h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z", group: "Operasional", show: can.readSchoolData },
+  { to: "/rapor", label: "Rapor", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z", group: "Operasional" },
+  { to: "/operasional", label: "Operasional", icon: "M4 21V7l8-4 8 4v14M9 21v-6h6v6", group: "Operasional", show: (r) => ["admin", "staff", "teacher", "guru", "headmaster"].includes(r) },
+  { to: "/akademik", label: "Akademik", icon: "M12 6v12M6 12h12M4 4h16v16H4z", group: "Operasional", show: can.manageAdminData },
+  { to: "/spp", label: "SPP", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v2", group: "Keuangan", mobile: true, show: can.readSchoolData },
+  { to: "/pengumuman", label: "Pengumuman", icon: "M11 5L6 9H2v6h4l5 4V5z M15.5 8a4 4 0 010 8", group: "Publikasi" },
+  { to: "/galeri", label: "Galeri", icon: "M4 16l4-4 4 4 8-8M4 6h16v12H4z", group: "Publikasi" },
+  { to: "/import-export", label: "Import/Export", icon: "M4 7h16M4 12h16M4 17h16M8 3v18m8-18v18", group: "Sistem", show: (r) => ["admin", "staff"].includes(r) },
+  { to: "/ai-saas", label: "AI & SaaS", icon: "M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3z", group: "Sistem", show: (r) => ["admin", "staff", "headmaster"].includes(r) },
 ]
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -46,32 +60,55 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           open ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
-        <div className="h-16 flex items-center px-5 border-b border-slate-100 dark:border-slate-800">
+        <div className="h-16 flex items-center justify-between gap-3 px-5 border-b border-slate-100 dark:border-slate-800">
           <Link to="/dashboard" onClick={() => setOpen(false)}>
             <Logo />
           </Link>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
+            aria-label="Tutup menu"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
-        <nav className="px-3 py-4 space-y-1 overflow-y-auto h-[calc(100vh-4rem)]">
-          {visible.map((n) => (
-            <NavLink
-              key={n.to}
-              to={n.to}
-              onClick={() => setOpen(false)}
-              end={n.to === "/dashboard"}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
-                  isActive
-                    ? "bg-primary-50 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300"
-                    : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
-                }`
-              }
-            >
-              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" strokeLinejoin="round" d={n.icon} />
-              </svg>
-              {n.label}
-            </NavLink>
-          ))}
+        <nav className="px-3 py-4 overflow-y-auto h-[calc(100vh-4rem)]">
+          {GROUPS.map((group) => {
+            const items = visible.filter((n) => n.group === group)
+            if (items.length === 0) return null
+            return (
+              <div key={group} className="mb-5 last:mb-0">
+                <div className="px-3 pb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
+                  {group}
+                </div>
+                <div className="space-y-1">
+                  {items.map((n) => (
+                    <NavLink
+                      key={n.to}
+                      to={n.to}
+                      onClick={() => setOpen(false)}
+                      end={n.to === "/dashboard"}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
+                          isActive
+                            ? "bg-primary-50 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300"
+                            : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
+                        }`
+                      }
+                    >
+                      <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path strokeLinecap="round" strokeLinejoin="round" d={n.icon} />
+                      </svg>
+                      {n.label}
+                    </NavLink>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
         </nav>
       </aside>
 
