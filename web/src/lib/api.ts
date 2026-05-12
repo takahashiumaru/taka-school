@@ -501,6 +501,7 @@ export const Spp = {
     const s = q.toString()
     return apiFetch<{ items: SppInvoice[] }>(`/api/spp${s ? `?${s}` : ""}`)
   },
+  get: (id: number) => apiFetch<SppInvoice>(`/api/spp/${id}`),
   create: (data: { studentId: number; period: string; amount: number; dueDate: string; note?: string | null }) =>
     apiFetch<{ id: number }>(`/api/spp`, { method: "POST", body: JSON.stringify(data) }),
   batch: (data: { classId?: number | null; period: string; amount: number; dueDate: string }) =>

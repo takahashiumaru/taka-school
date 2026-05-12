@@ -52,6 +52,22 @@ router.get("/", async (req, res) => {
   res.json({ items: rows })
 })
 
+router.get("/:id", async (req, res) => {
+  const schoolId = req.user!.schoolId
+  const id = Number(req.params.id)
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT i.*, s.name AS student_name, s.parent_name, s.parent_wa, s.class_id, c.name AS class_name
+     FROM spp_invoices i
+     JOIN students s ON s.id = i.student_id
+     LEFT JOIN classes c ON c.id = s.class_id
+     WHERE i.id = ? AND i.school_id = ?
+     LIMIT 1`,
+    [id, schoolId],
+  )
+  if (rows.length === 0) return res.status(404).json({ error: "Tagihan tidak ditemukan" })
+  res.json(rows[0])
+})
+
 router.post("/", requireOffice(), async (req, res) => {
   const schoolId = req.user!.schoolId
   const parsed = createSchema.safeParse(req.body)
