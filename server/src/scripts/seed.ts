@@ -244,6 +244,127 @@ export async function ensureDemoData() {
 
   await pool.query("INSERT INTO announcements (school_id, author_id, title, body) VALUES (?, ?, ?, ?)", [schoolId, adminId, "Simulasi Ujian Tengah Semester", "PTS semester ganjil akan dilaksanakan pekan depan. Mohon wali kelas memantau kesiapan siswa."])
 
+  // Library books
+  const books = [
+    ["Matematika Peminatan Kelas XII", "Tim Penulis Erlangga", "Pelajaran"],
+    ["Fisika untuk SMA/MA Kelas XI", "Marthen Kanginan", "Pelajaran"],
+    ["Kimia Dasar Kelas X", "Michael Purba", "Pelajaran"],
+    ["Biologi Campbell Edisi 11", "Jane B. Reece", "Referensi"],
+    ["Laskar Pelangi", "Andrea Hirata", "Fiksi"],
+    ["Bumi Manusia", "Pramoedya Ananta Toer", "Fiksi"],
+    ["Sapiens: A Brief History of Humankind", "Yuval Noah Harari", "Non-Fiksi"],
+    ["Atomic Habits", "James Clear", "Pengembangan Diri"],
+    ["The Psychology of Money", "Morgan Housel", "Ekonomi"],
+    ["Sejarah Indonesia Modern", "M.C. Ricklefs", "Sejarah"],
+    ["Kamus Besar Bahasa Indonesia", "Badan Bahasa Kemendikbud", "Referensi"],
+    ["Oxford Advanced Learner's Dictionary", "Oxford University Press", "Referensi"],
+    ["Ekonomi Mikro", "N. Gregory Mankiw", "Pelajaran"],
+    ["Sosiologi SMA Kelas XI", "Kun Maryati", "Pelajaran"],
+    ["Geografi Regional Indonesia", "Bintarto", "Pelajaran"],
+  ]
+  for (let i = 0; i < books.length; i += 1) {
+    const [title, author, category] = books[i]
+    const stock = 5 + (i % 8)
+    const borrowed = i % 4
+    await pool.query("INSERT INTO library_books (school_id, title, author, category, stock, available_stock) VALUES (?, ?, ?, ?, ?, ?)", [schoolId, title, author, category, stock, stock - borrowed])
+  }
+
+  // Inventory items
+  const inventory = [
+    ["Proyektor Epson EB-X06", "Elektronik", "Ruang Multimedia", 3, "good"],
+    ["Laptop Asus VivoBook", "Elektronik", "Lab Komputer", 25, "good"],
+    ["Meja Siswa Kayu Jati", "Furniture", "Kelas X IPA 1", 36, "good"],
+    ["Kursi Siswa Besi", "Furniture", "Kelas XI IPS 2", 36, "good"],
+    ["Papan Tulis Whiteboard 3x2m", "Alat Tulis", "Kelas XII Bahasa 1", 1, "good"],
+    ["AC Split 2 PK", "Elektronik", "Ruang Guru", 2, "maintenance"],
+    ["Printer Canon G3010", "Elektronik", "Ruang TU", 2, "good"],
+    ["Bola Sepak Mikasa", "Olahraga", "Gudang Olahraga", 15, "good"],
+    ["Bola Voli Molten", "Olahraga", "Gudang Olahraga", 12, "good"],
+    ["Mikroskop Olympus CX23", "Lab", "Lab Biologi", 8, "good"],
+    ["Tabung Reaksi Set", "Lab", "Lab Kimia", 50, "good"],
+    ["Gitar Akustik Yamaha", "Musik", "Ruang Kesenian", 5, "good"],
+    ["Keyboard Casio CTK-3500", "Musik", "Ruang Kesenian", 3, "good"],
+    ["Lemari Arsip Besi", "Furniture", "Ruang TU", 4, "good"],
+    ["Kipas Angin Berdiri", "Elektronik", "Kelas X IPS 1", 2, "damaged"],
+  ]
+  for (const [name, category, location, quantity, condition] of inventory) {
+    await pool.query("INSERT INTO inventory_items (school_id, name, category, location, quantity, condition_status) VALUES (?, ?, ?, ?, ?, ?)", [schoolId, name, category, location, quantity, condition])
+  }
+
+  // Extracurriculars
+  const ekstrakurikuler = [
+    ["Pramuka", "Senin & Kamis 15:00-17:00"],
+    ["Basket", "Selasa & Jumat 15:30-17:30"],
+    ["Futsal", "Rabu & Sabtu 15:30-17:30"],
+    ["Voli", "Senin & Kamis 15:30-17:30"],
+    ["Paduan Suara", "Rabu 15:00-17:00"],
+    ["Teater", "Jumat 15:00-17:00"],
+    ["Robotika", "Selasa & Kamis 15:00-17:00"],
+    ["Jurnalistik", "Rabu 15:00-17:00"],
+    ["PMR (Palang Merah Remaja)", "Jumat 15:00-17:00"],
+    ["English Club", "Selasa 15:00-16:30"],
+  ]
+  for (let i = 0; i < ekstrakurikuler.length; i += 1) {
+    const [name, schedule] = ekstrakurikuler[i]
+    const coach = teacherIds[i % teacherIds.length]
+    await pool.query("INSERT INTO extracurriculars (school_id, name, coach_user_id, schedule_note) VALUES (?, ?, ?, ?)", [schoolId, name, coach, schedule])
+  }
+
+  // Counseling records (BK)
+  const bkCategories = ["Akademik", "Sosial", "Pribadi", "Karir"]
+  const bkTitles = [
+    ["Akademik", "Kesulitan Memahami Materi Matematika", "Siswa mengalami kesulitan dalam memahami konsep integral. Perlu pendampingan tambahan.", "Koordinasi dengan guru mapel untuk les tambahan."],
+    ["Sosial", "Konflik dengan Teman Sekelas", "Terjadi kesalahpahaman dengan teman satu kelas terkait tugas kelompok.", "Mediasi antara kedua pihak dan pembinaan komunikasi."],
+    ["Pribadi", "Motivasi Belajar Menurun", "Siswa terlihat kurang semangat dan sering mengantuk di kelas.", "Konseling individu dan koordinasi dengan orang tua."],
+    ["Karir", "Konsultasi Pemilihan Jurusan Kuliah", "Siswa bingung memilih antara jurusan teknik atau kedokteran.", "Tes minat bakat dan diskusi prospek karir."],
+    ["Akademik", "Nilai Ulangan Harian Menurun", "Prestasi akademik menurun sejak semester ini.", "Evaluasi metode belajar dan penjadwalan ulang."],
+    ["Sosial", "Kesulitan Beradaptasi di Kelas Baru", "Siswa pindahan merasa kesulitan bergaul dengan teman baru.", "Buddy system dan kegiatan ice breaking."],
+    ["Pribadi", "Kecemasan Menghadapi Ujian", "Siswa mengalami anxiety berlebihan menjelang PTS.", "Teknik relaksasi dan manajemen stres."],
+    ["Karir", "Minat Mengikuti Olimpiade Sains", "Siswa ingin mengikuti OSN Fisika tingkat provinsi.", "Koordinasi dengan guru pembina dan jadwal latihan."],
+  ]
+  for (let i = 0; i < bkTitles.length; i += 1) {
+    const [category, title, notes, followUp] = bkTitles[i]
+    const student = studentRows[i * 13 % studentRows.length]
+    const recordDate = dateAdd(new Date("2026-10-01"), i * 3)
+    await pool.query("INSERT INTO counseling_records (school_id, student_id, category, title, notes, follow_up, record_date) VALUES (?, ?, ?, ?, ?, ?, ?)", [schoolId, student.id, category, title, notes, followUp, recordDate])
+  }
+
+  // School letters (Surat)
+  const letters = [
+    ["001/SMA-NM/X/2026", "Undangan", "Undangan Rapat Orang Tua Siswa Kelas XII", "Komite Sekolah", "issued"],
+    ["002/SMA-NM/X/2026", "Pemberitahuan", "Pemberitahuan Libur Semester Ganjil", "Seluruh Wali Murid", "issued"],
+    ["003/SMA-NM/X/2026", "Izin Kegiatan", "Permohonan Izin Study Tour ke Museum Geologi", "Dinas Pendidikan Kota Bandung", "issued"],
+    ["004/SMA-NM/X/2026", "Rekomendasi", "Surat Rekomendasi Siswa Berprestasi", "Panitia Beasiswa Unggulan", "issued"],
+    ["005/SMA-NM/X/2026", "Keterangan", "Surat Keterangan Aktif Siswa", "Bank BCA Cabang Bandung", "issued"],
+    ["006/SMA-NM/XI/2026", "Undangan", "Undangan Seminar Pendidikan Karakter", "Kepala Sekolah Se-Kota Bandung", "draft"],
+    ["007/SMA-NM/XI/2026", "Pemberitahuan", "Pemberitahuan Jadwal Ujian Akhir Semester", "Seluruh Siswa dan Wali Murid", "draft"],
+  ]
+  for (const [letterNo, type, subject, recipient, status] of letters) {
+    await pool.query("INSERT INTO school_letters (school_id, letter_no, type, subject, recipient, status) VALUES (?, ?, ?, ?, ?, ?)", [schoolId, letterNo, type, subject, recipient, status])
+  }
+
+  // Galleries
+  const galleries = [
+    ["Upacara Bendera 17 Agustus 2026", "Peringatan HUT RI ke-81 di lapangan sekolah dengan seluruh siswa dan guru.", "2026-08-17"],
+    ["Kegiatan MPLS 2026", "Masa Pengenalan Lingkungan Sekolah untuk siswa baru kelas X.", "2026-07-15"],
+    ["Lomba Olahraga Antar Kelas", "Kompetisi basket, futsal, dan voli antar kelas dalam rangka memperingati Hari Olahraga Nasional.", "2026-09-09"],
+    ["Pentas Seni Semester Ganjil", "Penampilan paduan suara, teater, dan band dari berbagai ekstrakurikuler.", "2026-10-20"],
+    ["Kunjungan Industri ke PT Telkom", "Siswa kelas XII IPA berkunjung ke PT Telkom Indonesia untuk mengenal dunia kerja.", "2026-09-25"],
+    ["Pelatihan Kepemimpinan OSIS", "Workshop leadership dan team building untuk pengurus OSIS periode 2026/2027.", "2026-08-05"],
+  ]
+  for (let i = 0; i < galleries.length; i += 1) {
+    const [title, description, eventDate] = galleries[i]
+    const galleryId = await insert("INSERT INTO galleries (school_id, title, description, event_date) VALUES (?, ?, ?, ?)", [schoolId, title, description, eventDate])
+    
+    // Add 3-5 dummy photo items per gallery
+    const photoCount = 3 + (i % 3)
+    for (let j = 0; j < photoCount; j += 1) {
+      const caption = `${title} - Foto ${j + 1}`
+      const photoUrl = `https://picsum.photos/seed/${schoolId}-${galleryId}-${j}/800/600`
+      await pool.query("INSERT INTO gallery_items (gallery_id, photo_url, caption) VALUES (?, ?, ?)", [galleryId, photoUrl, caption])
+    }
+  }
+
   console.log("[seed] SMA demo data inserted")
 }
 
