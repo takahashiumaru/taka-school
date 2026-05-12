@@ -56,6 +56,34 @@
   .surface-2 {
     @apply bg-slate-50 ring-1 ring-slate-200 dark:bg-slate-800/60 dark:ring-slate-700;
   }
+  .animate-card-in {
+    animation: cardIn 520ms cubic-bezier(.2,.8,.2,1) both;
+    animation-delay: var(--delay, 0ms);
+  }
+  .animate-float-soft {
+    animation: floatSoft 5s ease-in-out infinite;
+  }
+  .animate-bar-grow {
+    animation: barGrow 900ms cubic-bezier(.2,.8,.2,1) both;
+    animation-delay: var(--delay, 0ms);
+    transform-origin: bottom;
+  }
+  .animate-donut-spin {
+    animation: donutSpin 900ms cubic-bezier(.2,.8,.2,1) both;
+  }
+  .shine-surface {
+    position: relative;
+    overflow: hidden;
+  }
+  .shine-surface::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    transform: translateX(-120%);
+    background: linear-gradient(110deg, transparent 0%, rgba(255,255,255,.22) 45%, transparent 70%);
+    animation: shineSweep 4.5s ease-in-out infinite;
+    pointer-events: none;
+  }
   .input-base {
     @apply w-full px-3 py-2 rounded-lg ring-1 ring-slate-200 bg-white text-sm text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-primary-300 focus:outline-none dark:bg-slate-900 dark:ring-slate-700 dark:text-slate-100 dark:placeholder:text-slate-500 dark:focus:ring-primary-600;
   }
@@ -70,6 +98,41 @@
   }
   .btn-danger-sm {
     @apply btn bg-rose-600 text-white hover:bg-rose-700 px-3 py-1.5 text-sm focus:ring-rose-200;
+  }
+}
+
+@keyframes cardIn {
+  from { opacity: 0; transform: translateY(14px) scale(.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes floatSoft {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes barGrow {
+  from { transform: scaleY(.08); opacity: .55; filter: saturate(.85); }
+  to { transform: scaleY(1); opacity: 1; filter: saturate(1); }
+}
+
+@keyframes donutSpin {
+  from { transform: rotate(-110deg) scale(.92); opacity: .65; }
+  to { transform: rotate(0deg) scale(1); opacity: 1; }
+}
+
+@keyframes shineSweep {
+  0%, 55% { transform: translateX(-120%); }
+  75%, 100% { transform: translateX(120%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-card-in,
+  .animate-float-soft,
+  .animate-bar-grow,
+  .animate-donut-spin,
+  .shine-surface::after {
+    animation: none !important;
   }
 }
 

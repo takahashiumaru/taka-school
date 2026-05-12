@@ -1,4 +1,4 @@
-import type { ReactNode } from "react"
+import type { CSSProperties, ReactNode } from "react"
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
@@ -32,7 +32,7 @@ export default function DashboardPage() {
 
   return (
     <AppLayout>
-      <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+      <div className="animate-card-in flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <div className="text-xs text-slate-500 dark:text-slate-400">{today}</div>
           <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-slate-100">Dashboard</h1>
@@ -49,10 +49,10 @@ export default function DashboardPage() {
       {stats && (
         <>
           <div className="mt-6 grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <Card title="Total Siswa" value={stats.students} sub="aktif" color="from-sky-500 to-cyan-700" to="/siswa" />
-            <Card title="Total Guru" value={stats.teachers} sub="aktif" color="from-violet-500 to-indigo-700" to="/guru" />
-            <Card title="Jumlah Kelas" value={stats.classes} sub="terdaftar" color="from-amber-500 to-orange-700" to="/kelas" />
-            <Card title="SPP Lunas" value={`${sppRate}%`} sub={`${spp?.lunas ?? 0}/${spp?.total ?? 0} tagihan`} color="from-emerald-500 to-teal-700" to="/spp" />
+            <Card title="Total Siswa" value={stats.students} sub="aktif" color="from-sky-500 to-cyan-700" to="/siswa" delay={80} />
+            <Card title="Total Guru" value={stats.teachers} sub="aktif" color="from-violet-500 to-indigo-700" to="/guru" delay={160} />
+            <Card title="Jumlah Kelas" value={stats.classes} sub="terdaftar" color="from-amber-500 to-orange-700" to="/kelas" delay={240} />
+            <Card title="SPP Lunas" value={`${sppRate}%`} sub={`${spp?.lunas ?? 0}/${spp?.total ?? 0} tagihan`} color="from-emerald-500 to-teal-700" to="/spp" delay={320} />
           </div>
 
           <div className="mt-6 grid xl:grid-cols-[1.45fr_0.9fr] gap-4">
@@ -107,31 +107,56 @@ export default function DashboardPage() {
   )
 }
 
-function Card({ title, value, sub, color, to }: { title: string; value: number | string; sub: string; color: string; to?: string }) {
-  const inner = <div className={`rounded-2xl bg-gradient-to-br ${color} text-white p-5 shadow-soft transition hover:scale-[1.01]`}><div className="text-sm text-white/80">{title}</div><div className="mt-2 text-4xl font-bold">{value}</div><div className="text-xs text-white/80">{sub}</div></div>
+function Card({ title, value, sub, color, to, delay = 0 }: { title: string; value: number | string; sub: string; color: string; to?: string; delay?: number }) {
+  const inner = (
+    <div
+      className={`animate-card-in shine-surface rounded-2xl bg-gradient-to-br ${color} text-white p-5 shadow-soft transition duration-300 hover:-translate-y-1 hover:scale-[1.02] hover:shadow-xl`}
+      style={{ "--delay": `${delay}ms` } as CSSProperties}
+    >
+      <div className="text-sm text-white/80">{title}</div>
+      <div className="mt-2 text-4xl font-bold tabular-nums">{value}</div>
+      <div className="text-xs text-white/80">{sub}</div>
+    </div>
+  )
   return to ? <Link to={to}>{inner}</Link> : inner
 }
 
 function Panel({ title, desc, children }: { title: string; desc: string; children: ReactNode }) {
-  return <section className="rounded-2xl bg-white ring-1 ring-slate-200 p-5 dark:bg-slate-900 dark:ring-slate-800"><div className="mb-4"><h2 className="font-semibold text-slate-900 dark:text-slate-100">{title}</h2><p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{desc}</p></div>{children}</section>
+  return <section className="animate-card-in rounded-2xl bg-white ring-1 ring-slate-200 p-5 transition duration-300 hover:-translate-y-0.5 hover:shadow-soft dark:bg-slate-900 dark:ring-slate-800"><div className="mb-4"><h2 className="font-semibold text-slate-900 dark:text-slate-100">{title}</h2><p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{desc}</p></div>{children}</section>
 }
 
 function MiniBarChart({ data }: { data: NonNullable<DashboardStats["attendanceTrend"]> }) {
   const max = Math.max(100, ...data.map((d) => d.rate))
   if (data.length === 0) return <EmptyState text="Belum ada data absensi mingguan." />
-  return <div className="h-64 flex items-end gap-2 sm:gap-3 rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/50">{data.map((d) => <div key={d.date} className="flex min-w-0 flex-1 flex-col items-center gap-2"><div className="w-full flex items-end justify-center h-44"><div className="w-full max-w-12 rounded-t-2xl bg-gradient-to-t from-cyan-600 to-sky-300 shadow-lg shadow-sky-500/10" style={{ height: `${Math.max(8, (d.rate / max) * 100)}%` }} title={`${d.rate}% hadir`} /></div><div className="text-xs font-semibold text-slate-700 dark:text-slate-200">{d.rate}%</div><div className="text-[11px] text-slate-500 dark:text-slate-400">{d.label}</div></div>)}</div>
+  return (
+    <div className="h-64 flex items-end gap-2 sm:gap-3 rounded-2xl bg-slate-50 p-4 dark:bg-slate-950/50">
+      {data.map((d, index) => (
+        <div key={d.date} className="flex min-w-0 flex-1 flex-col items-center gap-2">
+          <div className="w-full flex items-end justify-center h-44">
+            <div
+              className="animate-bar-grow w-full max-w-12 rounded-t-2xl bg-gradient-to-t from-cyan-600 to-sky-300 shadow-lg shadow-sky-500/10 transition duration-300 hover:brightness-110"
+              style={{ height: `${Math.max(8, (d.rate / max) * 100)}%`, "--delay": `${index * 90}ms` } as CSSProperties}
+              title={`${d.rate}% hadir`}
+            />
+          </div>
+          <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">{d.rate}%</div>
+          <div className="text-[11px] text-slate-500 dark:text-slate-400">{d.label}</div>
+        </div>
+      ))}
+    </div>
+  )
 }
 
 function DonutChart({ value }: { value: number }) {
   const safe = Math.min(100, Math.max(0, value))
-  return <div className="relative h-32 w-32 shrink-0 rounded-full" style={{ background: `conic-gradient(rgb(16 185 129) ${safe * 3.6}deg, rgb(30 41 59) 0deg)` }}><div className="absolute inset-4 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center"><div className="text-center"><div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{safe}%</div><div className="text-[10px] text-slate-500">lunas</div></div></div></div>
+  return <div className="animate-donut-spin animate-float-soft relative h-32 w-32 shrink-0 rounded-full shadow-lg shadow-emerald-500/10" style={{ background: `conic-gradient(rgb(16 185 129) ${safe * 3.6}deg, rgb(30 41 59) 0deg)` }}><div className="absolute inset-4 rounded-full bg-white dark:bg-slate-900 flex items-center justify-center"><div className="text-center"><div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{safe}%</div><div className="text-[10px] text-slate-500">lunas</div></div></div></div>
 }
 
 function Metric({ label, value, tone = "text-slate-900 dark:text-slate-100" }: { label: string; value: string; tone?: string }) { return <div><div className="text-xs text-slate-500 dark:text-slate-400">{label}</div><div className={`font-semibold ${tone}`}>{value}</div></div> }
 
 function InsightCard({ title, value, desc, to, tone = "emerald" }: { title: string; value: number | string; desc: string; to: string; tone?: "emerald" | "rose" | "amber" | "sky" }) {
   const tones = { emerald: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-300", rose: "bg-rose-500/10 text-rose-600 dark:text-rose-300", amber: "bg-amber-500/10 text-amber-600 dark:text-amber-300", sky: "bg-sky-500/10 text-sky-600 dark:text-sky-300" }
-  return <Link to={to} className="rounded-2xl bg-white ring-1 ring-slate-200 p-4 hover:ring-primary-300 transition dark:bg-slate-900 dark:ring-slate-800"><div className="text-sm text-slate-500 dark:text-slate-400">{title}</div><div className={`mt-3 inline-flex rounded-xl px-3 py-1 text-2xl font-bold ${tones[tone]}`}>{value}</div><div className="mt-3 text-xs text-slate-500 dark:text-slate-400">{desc}</div></Link>
+  return <Link to={to} className="animate-card-in rounded-2xl bg-white ring-1 ring-slate-200 p-4 hover:-translate-y-0.5 hover:ring-primary-300 hover:shadow-soft transition duration-300 dark:bg-slate-900 dark:ring-slate-800"><div className="text-sm text-slate-500 dark:text-slate-400">{title}</div><div className={`mt-3 inline-flex rounded-xl px-3 py-1 text-2xl font-bold tabular-nums ${tones[tone]}`}>{value}</div><div className="mt-3 text-xs text-slate-500 dark:text-slate-400">{desc}</div></Link>
 }
 
 function ClassAttentionTable({ rows }: { rows: NonNullable<DashboardStats["classAttention"]> }) {
@@ -147,5 +172,5 @@ function TodayAgenda({ rows }: { rows: NonNullable<DashboardStats["todayAgenda"]
 function EmptyState({ text }: { text: string }) { return <div className="rounded-xl border border-dashed border-slate-200 p-5 text-sm text-slate-500 dark:border-slate-800 dark:text-slate-400">{text}</div> }
 
 function ActionButton({ to, title, desc, icon }: { to: string; title: string; desc: string; icon: string }) {
-  return <Link to={to} className="group rounded-2xl bg-slate-50 ring-1 ring-slate-200 p-4 hover:bg-primary-50 hover:ring-primary-200 transition dark:bg-slate-950/50 dark:ring-slate-800 dark:hover:bg-primary-500/10"><div className="h-10 w-10 rounded-xl bg-white ring-1 ring-slate-200 flex items-center justify-center text-sm font-bold text-primary-700 group-hover:ring-primary-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-primary-300">{icon}</div><div className="mt-3 font-semibold text-slate-900 text-sm dark:text-slate-100">{title}</div><div className="text-xs text-slate-500 mt-1 leading-relaxed dark:text-slate-400">{desc}</div></Link>
+  return <Link to={to} className="group animate-card-in rounded-2xl bg-slate-50 ring-1 ring-slate-200 p-4 hover:-translate-y-1 hover:bg-primary-50 hover:ring-primary-200 hover:shadow-soft transition duration-300 dark:bg-slate-950/50 dark:ring-slate-800 dark:hover:bg-primary-500/10"><div className="h-10 w-10 rounded-xl bg-white ring-1 ring-slate-200 flex items-center justify-center text-sm font-bold text-primary-700 transition duration-300 group-hover:scale-110 group-hover:rotate-3 group-hover:ring-primary-200 dark:bg-slate-900 dark:ring-slate-700 dark:text-primary-300">{icon}</div><div className="mt-3 font-semibold text-slate-900 text-sm dark:text-slate-100">{title}</div><div className="text-xs text-slate-500 mt-1 leading-relaxed dark:text-slate-400">{desc}</div></Link>
 }
