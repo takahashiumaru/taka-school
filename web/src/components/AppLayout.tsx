@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useLayoutEffect, useRef, useState } from "react"
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom"
 import Logo from "./Logo"
 import { clearAuth, getUser } from "../lib/api"
@@ -43,10 +43,35 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
   const [open, setOpen] = useState(false)
+  const navRef = useRef<HTMLElement>(null)
+  const sidebarScrollRef = useRef(0)
+
+  useLayoutEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    nav.scrollTop = sidebarScrollRef.current
+  }, [location.pathname])
+
+  useEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const saveScroll = () => { sidebarScrollRef.current = nav.scrollTop }
+    nav.addEventListener("scroll", saveScroll, { passive: true })
+    return () => nav.removeEventListener("scroll", saveScroll)
+  }, [])
 
   if (!user) return null
 
   const visible = NAV.filter((n) => !n.show || n.show(user.role))
+
+  function rememberSidebarScroll() {
+    if (navRef.current) sidebarScrollRef.current = navRef.current.scrollTop
+  }
+
+  function closeMobileMenu() {
+    rememberSidebarScroll()
+    setOpen(false)
+  }
 
   function handleLogout() {
     clearAuth()
@@ -61,12 +86,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         } lg:translate-x-0`}
       >
         <div className="h-16 flex items-center justify-between gap-3 px-5 border-b border-slate-100 dark:border-slate-800">
-          <Link to="/dashboard" onClick={() => setOpen(false)}>
+          <Link to="/dashboard" onClick={closeMobileMenu}>
             <Logo />
           </Link>
           <button
             type="button"
-            onClick={() => setOpen(false)}
+            onClick={closeMobileMenu}
             className="lg:hidden inline-flex h-9 w-9 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-300 dark:hover:bg-slate-800 dark:hover:text-white"
             aria-label="Tutup menu"
           >
@@ -75,7 +100,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </svg>
           </button>
         </div>
-        <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 pb-8 overscroll-contain">
+        <nav ref={navRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 pb-8 overscroll-contain">
           {GROUPS.map((group) => {
             const items = visible.filter((n) => n.group === group)
             if (items.length === 0) return null
@@ -89,7 +114,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <NavLink
                       key={n.to}
                       to={n.to}
-                      onClick={() => setOpen(false)}
+                      onClick={closeMobileMenu}
                       end={n.to === "/dashboard"}
                       className={({ isActive }) =>
                         `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
@@ -115,7 +140,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       {open && (
         <div
           className="fixed inset-0 bg-slate-900/30 dark:bg-slate-950/60 z-30 lg:hidden"
-          onClick={() => setOpen(false)}
+          onClick={closeMobileMenu}
         />
       )}
 
