@@ -54,9 +54,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-40 w-64 bg-white ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 transform transition-transform ${
+        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-64 flex-col bg-white ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 transform transition-transform ${
           open ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
@@ -75,7 +75,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </svg>
           </button>
         </div>
-        <nav className="px-3 py-4 overflow-y-auto h-[calc(100vh-4rem)]">
+        <nav className="flex-1 min-h-0 overflow-y-auto px-3 py-4 pb-8 overscroll-contain">
           {GROUPS.map((group) => {
             const items = visible.filter((n) => n.group === group)
             if (items.length === 0) return null
@@ -119,7 +119,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         />
       )}
 
-      <div className="flex-1 min-w-0 flex flex-col">
+      <div className="min-w-0 lg:ml-64 flex min-h-screen flex-col">
         <header className="bg-white ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800 sticky top-0 z-20">
           <div className="h-16 flex items-center justify-between px-4 sm:px-6">
             <button
