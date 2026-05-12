@@ -1,19 +1,7 @@
 const items = [
-  {
-    quote: "Akhirnya guru tidak repot rekap absensi tiap akhir bulan. Orang tua juga makin terinfo.",
-    name: "Ibu Sari",
-    role: "Kepala TK Tunas Bangsa",
-  },
-  {
-    quote: "Tagihan SPP yang biasanya nunggak banyak, sekarang bisa diingatkan otomatis lewat WA.",
-    name: "Bapak Irfan",
-    role: "Pemilik PAUD Cendekia",
-  },
-  {
-    quote: "Setup-nya gampang banget. Saya yang gaptek pun bisa input data 80 siswa dalam sehari.",
-    name: "Ibu Rani",
-    role: "Admin TK Mutiara",
-  },
+  { quote: "Dashboard analytics-nya enak buat lihat siswa aktif, absensi, SPP, dan PPDB tanpa buka banyak file Excel.", name: "Ibu Siti", role: "Admin SMA Taka Nusantara" },
+  { quote: "PPDB dengan peta membantu wali mengisi alamat lebih jelas. Titik lokasi langsung masuk ke catatan pendaftaran.", name: "Bapak Arif", role: "Panitia PPDB" },
+  { quote: "Tagihan SPP, piutang, overdue, dan reminder WhatsApp sekarang terlihat rapi dalam satu halaman.", name: "Ibu Rani", role: "Bendahara Sekolah" },
 ]
 
 export default function Testimonials() {
@@ -22,9 +10,9 @@ export default function Testimonials() {
       <div className="max-w-7xl mx-auto container-px">
         <div className="text-center max-w-2xl mx-auto">
           <span className="eyebrow">Testimoni</span>
-          <h2 className="section-title">Kata mereka yang sudah pakai</h2>
+          <h2 className="section-title">Dibuat mengikuti kebutuhan operasional nyata</h2>
           <p className="section-sub mx-auto">
-            Cerita dari sekolah-sekolah kecil yang lebih rapi sejak pakai Taka School.
+            Contoh penggunaan untuk admin, panitia PPDB, guru, dan bendahara sekolah.
           </p>
         </div>
 

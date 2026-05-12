@@ -1,49 +1,51 @@
 const plans = [
   {
-    name: "Gratis",
+    name: "Starter",
     price: "Rp 0",
     period: "/bulan",
-    desc: "Cocok untuk lembaga kecil yang baru mulai.",
+    desc: "Untuk demo, trial, atau sekolah yang baru mulai digitalisasi.",
     features: [
-      "Hingga 30 siswa",
-      "1 admin · 3 guru",
-      "Absensi & jadwal",
-      "Pengumuman",
-      "Helper Chat WhatsApp",
+      "Hingga 50 siswa",
+      "1 admin · 5 guru",
+      "Data siswa, guru, kelas",
+      "Absensi, jadwal, pengumuman",
+      "PPDB basic",
+      "Export data manual",
     ],
     cta: "Mulai Gratis",
     highlight: false,
   },
   {
-    name: "Pro",
-    price: "Rp 199rb",
+    name: "Sekolah Pro",
+    price: "Rp 299rb",
     period: "/bulan",
-    desc: "Untuk PAUD/TK yang sudah berjalan.",
+    desc: "Untuk sekolah PAUD/TK/SD/SMP/SMA yang butuh operasional lengkap.",
     features: [
-      "Hingga 200 siswa",
+      "Hingga 500 siswa",
       "Admin & guru tak terbatas",
-      "Semua fitur Gratis",
-      "Pembayaran SPP & laporan",
-      "Galeri kegiatan",
-      "Rapor PDF",
-      "Backup harian",
+      "Dashboard analytics",
+      "PPDB + alamat OpenStreetMap + titik lat/lng",
+      "SPP, piutang, overdue, reminder WA",
+      "Rapor, galeri, portal, import/export",
+      "Backup harian & support prioritas",
     ],
-    cta: "Pilih Pro",
+    cta: "Pilih Sekolah Pro",
     highlight: true,
   },
   {
-    name: "Sekolah+",
+    name: "Yayasan / Multi Sekolah",
     price: "Custom",
     period: "",
-    desc: "Untuk SD kecil atau lembaga > 200 siswa.",
+    desc: "Untuk yayasan multi-jenjang, banyak cabang, atau kebutuhan custom domain/server.",
     features: [
-      "Tak terbatas siswa",
-      "Custom domain",
-      "Onboarding & training",
-      "Prioritas support",
-      "WhatsApp Business API (roadmap)",
+      "Siswa & cabang fleksibel",
+      "Multi-jenjang PAUD sampai SMA",
+      "Custom domain dan deployment mandiri",
+      "Migrasi/import database lama",
+      "Onboarding admin & training guru",
+      "Integrasi WhatsApp Business API bila diperlukan",
     ],
-    cta: "Hubungi Kami",
+    cta: "Hubungi Admin",
     highlight: false,
   },
 ]
@@ -52,11 +54,12 @@ export default function Pricing() {
   return (
     <section id="harga" className="section bg-slate-50 dark:bg-slate-900/40">
       <div className="max-w-7xl mx-auto container-px">
-        <div className="text-center max-w-2xl mx-auto">
+        <div className="text-center max-w-3xl mx-auto">
           <span className="eyebrow">Harga</span>
-          <h2 className="section-title">Mulai gratis, naik kelas saat siap</h2>
+          <h2 className="section-title">Paket disesuaikan dengan skala sekolah</h2>
           <p className="section-sub mx-auto">
-            Tanpa biaya setup, tanpa kontrak panjang. Berhenti kapan saja.
+            Mulai dari trial gratis sampai paket sekolah lengkap dengan PPDB, SPP, rapor, maps,
+            analytics, backup, dan support operasional.
           </p>
         </div>
 
@@ -72,7 +75,7 @@ export default function Pricing() {
             >
               {p.highlight && (
                 <span className="self-start inline-flex items-center rounded-full bg-white/15 backdrop-blur px-3 py-1 text-xs font-semibold ring-1 ring-white/20 mb-3">
-                  ⭐ Paling populer
+                  ⭐ Paling sesuai fitur sekarang
                 </span>
               )}
               <h3 className={`text-lg font-semibold ${p.highlight ? "text-white" : "text-slate-900 dark:text-slate-100"}`}>
@@ -110,7 +113,8 @@ export default function Pricing() {
         </div>
 
         <p className="mt-8 text-center text-sm text-slate-500 dark:text-slate-400">
-          Harga belum termasuk PPN. Bisa upgrade/downgrade kapan saja.
+          Harga dapat disesuaikan untuk sekolah/yayasan. Paket produksi wajib memakai database, backup,
+          dan kredensial yang aman.
         </p>
       </div>
     </section>

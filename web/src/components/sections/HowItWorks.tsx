@@ -1,33 +1,19 @@
 const steps = [
-  {
-    n: "01",
-    title: "Daftar Sekolah",
-    desc: "Buat akun sekolah dalam 1 menit. Verifikasi via email & langsung pakai.",
-    icon: "📝",
-  },
-  {
-    n: "02",
-    title: "Setup Data",
-    desc: "Tambah kelas, import siswa via CSV, undang guru. Atur tarif SPP.",
-    icon: "⚙️",
-  },
-  {
-    n: "03",
-    title: "Mulai Pakai",
-    desc: "Guru input absensi & rapor. Orang tua otomatis dapat info via WhatsApp.",
-    icon: "🚀",
-  },
+  { n: "01", title: "Setup Sekolah & Jenjang", desc: "Isi profil sekolah, pilih jenjang PAUD/TK/SD/SMP/SMA, lalu buat kelas, guru, dan role admin/guru.", icon: "🏫" },
+  { n: "02", title: "Masukkan Data Operasional", desc: "Import siswa, isi wali/WhatsApp, jalankan PPDB, cari alamat lewat OpenStreetMap, dan generate tagihan SPP.", icon: "🗂️" },
+  { n: "03", title: "Kelola Harian dari Dashboard", desc: "Pantau analytics, absensi, SPP/piutang, PPDB, rapor, pengumuman, jadwal, galeri, dan reminder WA dari satu tempat.", icon: "📊" },
 ]
 
 export default function HowItWorks() {
   return (
     <section id="cara" className="section">
       <div className="max-w-7xl mx-auto container-px">
-        <div className="text-center max-w-2xl mx-auto">
+        <div className="text-center max-w-3xl mx-auto">
           <span className="eyebrow">Cara Kerja</span>
-          <h2 className="section-title">Tiga langkah, langsung jalan</h2>
+          <h2 className="section-title">Dari setup sampai operasional sekolah</h2>
           <p className="section-sub mx-auto">
-            Tidak butuh tim IT. Admin sekolah bisa setup sendiri.
+            Alurnya dibuat praktis untuk admin sekolah: siapkan data awal, jalankan proses harian,
+            lalu pantau semuanya dari dashboard analytics.
           </p>
         </div>
 
