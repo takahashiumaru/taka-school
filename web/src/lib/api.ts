@@ -446,14 +446,16 @@ export const Teachers = {
 }
 
 export const Classes = {
-  list: (params?: { educationLevelId?: number; gradeLevelId?: number; academicYearId?: number; majorId?: number }) => {
+  list: (params?: { educationLevelId?: number; gradeLevelId?: number; academicYearId?: number; majorId?: number; page?: number; pageSize?: number }) => {
     const q = new URLSearchParams()
     if (params?.educationLevelId) q.set("educationLevelId", String(params.educationLevelId))
     if (params?.gradeLevelId) q.set("gradeLevelId", String(params.gradeLevelId))
     if (params?.academicYearId) q.set("academicYearId", String(params.academicYearId))
     if (params?.majorId) q.set("majorId", String(params.majorId))
+    if (params?.page) q.set("page", String(params.page))
+    if (params?.pageSize) q.set("pageSize", String(params.pageSize))
     const s = q.toString()
-    return apiFetch<{ items: Klass[] }>(`/api/classes${s ? `?${s}` : ""}`)
+    return apiFetch<PaginatedResponse<Klass>>(`/api/classes${s ? `?${s}` : ""}`)
   },
   get: (id: number) => apiFetch<Klass & { students: Pick<Student, "id" | "nis" | "nisn" | "name" | "gender" | "status">[] }>(`/api/classes/${id}`),
   create: (data: { name: string; gradeLevel?: string | null; educationLevelId?: number | null; gradeLevelId?: number | null; academicYearId?: number | null; majorId?: number | null; homeroomTeacherId?: number | null }) =>
@@ -547,9 +549,13 @@ export const Spp = {
 }
 
 export const Schedules = {
-  list: (classId?: number) => {
-    const q = classId ? `?classId=${classId}` : ""
-    return apiFetch<{ items: Schedule[] }>(`/api/schedules${q}`)
+  list: (params?: { classId?: number; page?: number; pageSize?: number }) => {
+    const q = new URLSearchParams()
+    if (params?.classId) q.set("classId", String(params.classId))
+    if (params?.page) q.set("page", String(params.page))
+    if (params?.pageSize) q.set("pageSize", String(params.pageSize))
+    const s = q.toString()
+    return apiFetch<PaginatedResponse<Schedule>>(`/api/schedules${s ? `?${s}` : ""}`)
   },
   create: (data: { classId: number; dayOfWeek: number; startTime: string; endTime: string; subject: string; teacherId?: number | null }) =>
     apiFetch<{ id: number }>(`/api/schedules`, { method: "POST", body: JSON.stringify(data) }),
@@ -559,7 +565,13 @@ export const Schedules = {
 }
 
 export const Announcements = {
-  list: () => apiFetch<{ items: Announcement[] }>(`/api/announcements`),
+  list: (params?: { page?: number; pageSize?: number }) => {
+    const q = new URLSearchParams()
+    if (params?.page) q.set("page", String(params.page))
+    if (params?.pageSize) q.set("pageSize", String(params.pageSize))
+    const s = q.toString()
+    return apiFetch<PaginatedResponse<Announcement>>(`/api/announcements${s ? `?${s}` : ""}`)
+  },
   create: (data: { title: string; body: string; targetClassId?: number | null }) =>
     apiFetch<{ id: number }>(`/api/announcements`, { method: "POST", body: JSON.stringify(data) }),
   update: (id: number, data: Partial<{ title: string; body: string; targetClassId: number | null }>) =>
@@ -568,7 +580,13 @@ export const Announcements = {
 }
 
 export const Galleries = {
-  list: () => apiFetch<{ items: Gallery[] }>(`/api/galleries`),
+  list: (params?: { page?: number; pageSize?: number }) => {
+    const q = new URLSearchParams()
+    if (params?.page) q.set("page", String(params.page))
+    if (params?.pageSize) q.set("pageSize", String(params.pageSize))
+    const s = q.toString()
+    return apiFetch<PaginatedResponse<Gallery>>(`/api/galleries${s ? `?${s}` : ""}`)
+  },
   get: (id: number) => apiFetch<Gallery & { items: GalleryItem[] }>(`/api/galleries/${id}`),
   create: (data: { title: string; description?: string | null; coverUrl?: string | null; eventDate?: string | null }) =>
     apiFetch<{ id: number }>(`/api/galleries`, { method: "POST", body: JSON.stringify(data) }),
@@ -582,9 +600,13 @@ export const Galleries = {
 }
 
 export const Reports = {
-  list: (studentId?: number) => {
-    const q = studentId ? `?studentId=${studentId}` : ""
-    return apiFetch<{ items: Report[] }>(`/api/reports${q}`)
+  list: (params?: { studentId?: number; page?: number; pageSize?: number }) => {
+    const q = new URLSearchParams()
+    if (params?.studentId) q.set("studentId", String(params.studentId))
+    if (params?.page) q.set("page", String(params.page))
+    if (params?.pageSize) q.set("pageSize", String(params.pageSize))
+    const s = q.toString()
+    return apiFetch<PaginatedResponse<Report>>(`/api/reports${s ? `?${s}` : ""}`)
   },
   get: (id: number) => apiFetch<Report>(`/api/reports/${id}`),
   create: (data: { studentId: number; semester: string; body: string }) =>

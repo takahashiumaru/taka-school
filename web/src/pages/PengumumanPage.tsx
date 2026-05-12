@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
+import Pagination from "../components/Pagination"
+import { usePagination } from "../hooks/usePagination"
 import {
   Announcements,
   getUser,
   type Announcement,
+  type PaginationMeta,
 } from "../lib/api"
 
 
@@ -15,15 +18,19 @@ function fmt(d: string): string {
 export default function PengumumanPage() {
   const user = getUser()
   const [items, setItems] = useState<Announcement[]>([])
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+
+  const { page, pageSize, setPage, setPageSize } = usePagination()
 
   async function refresh() {
     setLoading(true)
     setError(null)
     try {
-      const a = await Announcements.list()
+      const a = await Announcements.list({ page, pageSize })
       setItems(a.items)
+      setPagination(a.pagination)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal")
     } finally {
@@ -31,7 +38,7 @@ export default function PengumumanPage() {
     }
   }
 
-  useEffect(() => { refresh() }, [])
+  useEffect(() => { refresh() }, [page, pageSize])
 
   async function handleDelete(a: Announcement) {
     if (!confirm(`Hapus pengumuman "${a.title}"?`)) return
@@ -50,7 +57,9 @@ export default function PengumumanPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Pengumuman</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Info untuk guru atau kelas tertentu</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+            {pagination ? `${pagination.total} pengumuman` : "Info untuk guru atau kelas tertentu"}
+          </p>
         </div>
         <Link to="/pengumuman/baru" className="btn-primary">+ Buat Pengumuman</Link>
       </div>
@@ -81,6 +90,18 @@ export default function PengumumanPage() {
           </article>
         ))}
       </div>
+
+      {pagination && (
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={pagination.total}
+          totalPages={pagination.totalPages}
+          loading={loading}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      )}
 
     </AppLayout>
   )

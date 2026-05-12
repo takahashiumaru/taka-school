@@ -3,6 +3,7 @@ import { z } from "zod"
 import type { RowDataPacket, ResultSetHeader } from "mysql2"
 import { pool } from "../db.js"
 import { requireAuth } from "../auth.js"
+import { parsePagination, paginationMeta } from "../pagination.js"
 
 const router = Router()
 
@@ -22,13 +23,24 @@ const itemSchema = z.object({
 
 router.get("/", async (req, res) => {
   const schoolId = req.user!.schoolId
+  const { page, pageSize, limit, offset } = parsePagination(req.query)
+
+  const [[{ total }]] = await pool.query<RowDataPacket[]>(
+    `SELECT COUNT(*) as total FROM galleries WHERE school_id = ?`,
+    [schoolId]
+  )
+
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT g.*, (SELECT COUNT(*) FROM gallery_items i WHERE i.gallery_id = g.id) AS photo_count
      FROM galleries g WHERE g.school_id = ?
-     ORDER BY COALESCE(g.event_date, g.created_at) DESC LIMIT 200`,
-    [schoolId],
+     ORDER BY COALESCE(g.event_date, g.created_at) DESC LIMIT ? OFFSET ?`,
+    [schoolId, limit, offset],
   )
-  res.json({ items: rows })
+
+  res.json({
+    items: rows,
+    pagination: paginationMeta(Number(total), page, pageSize),
+  })
 })
 
 router.get("/:id", async (req, res) => {

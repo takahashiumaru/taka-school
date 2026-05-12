@@ -1,28 +1,35 @@
 import { useEffect, useState } from "react"
 import { Link } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
+import Pagination from "../components/Pagination"
 import ConfirmDialog from "../components/ConfirmDialog"
 import { AlertBox, CardSkeleton, EmptyState } from "../components/UiState"
+import { usePagination } from "../hooks/usePagination"
 import {
   Classes,
   getUser,
   type Klass,
+  type PaginationMeta,
 } from "../lib/api"
 
 export default function KelasPage() {
   const user = getUser()
   const [items, setItems] = useState<Klass[]>([])
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Klass | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  const { page, pageSize, setPage, setPageSize } = usePagination()
+
   async function refresh() {
     setLoading(true)
     setError(null)
     try {
-      const c = await Classes.list()
+      const c = await Classes.list({ page, pageSize })
       setItems(c.items)
+      setPagination(c.pagination)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal memuat")
     } finally {
@@ -32,7 +39,7 @@ export default function KelasPage() {
 
   useEffect(() => {
     refresh()
-  }, [])
+  }, [page, pageSize])
 
   async function confirmDelete() {
     if (!deleteTarget) return
@@ -55,7 +62,9 @@ export default function KelasPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Kelas</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{items.length} kelas terdaftar dari PAUD sampai SMA</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+            {pagination ? `${pagination.total} kelas terdaftar dari PAUD sampai SMA` : "Memuat..."}
+          </p>
         </div>
         <Link to="/kelas/baru" className="btn-primary">+ Tambah Kelas</Link>
       </div>
@@ -94,6 +103,20 @@ export default function KelasPage() {
           </div>
         ))}
       </div>
+
+      {pagination && (
+        <div className="mt-5">
+          <Pagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={pagination.total}
+            totalPages={pagination.totalPages}
+            loading={loading}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        </div>
+      )}
 
       <ConfirmDialog
         open={!!deleteTarget}

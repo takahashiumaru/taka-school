@@ -3,16 +3,20 @@ import { Link } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
 import Modal from "../components/Modal"
 import ConfirmDialog from "../components/ConfirmDialog"
+import Pagination from "../components/Pagination"
+import { usePagination } from "../hooks/usePagination"
 import {
   Galleries,
   uploadFile,
   type Gallery,
   type GalleryItem,
+  type PaginationMeta,
 } from "../lib/api"
 
 
 export default function GaleriPage() {
   const [items, setItems] = useState<Gallery[]>([])
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [viewing, setViewing] = useState<(Gallery & { items: GalleryItem[] }) | null>(null)
@@ -24,12 +28,17 @@ export default function GaleriPage() {
   const photoFileRef = useRef<HTMLInputElement>(null)
   const bulkFileRef = useRef<HTMLInputElement>(null)
 
+  const { page, pageSize, setPage, setPageSize } = usePagination({
+    defaultPageSize: 12,
+  })
+
   async function refresh() {
     setLoading(true)
     setError(null)
     try {
-      const r = await Galleries.list()
+      const r = await Galleries.list({ page, pageSize })
       setItems(r.items)
+      setPagination(r.pagination)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal")
     } finally {
@@ -37,7 +46,7 @@ export default function GaleriPage() {
     }
   }
 
-  useEffect(() => { refresh() }, [])
+  useEffect(() => { refresh() }, [page, pageSize])
 
   async function handleDelete(g: Gallery) {
     try {
@@ -130,7 +139,9 @@ export default function GaleriPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Galeri Kegiatan</h1>
-          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Album foto kegiatan sekolah</p>
+          <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+            {pagination ? `${pagination.total} album` : "Album foto kegiatan sekolah"}
+          </p>
         </div>
         <Link to="/galeri/baru" className="btn-primary">+ Album Baru</Link>
       </div>
@@ -166,6 +177,18 @@ export default function GaleriPage() {
           </div>
         ))}
       </div>
+
+      {pagination && pagination.total > 0 && (
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={pagination.total}
+          totalPages={pagination.totalPages}
+          loading={loading}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      )}
 
       <Modal open={!!viewing} onClose={() => setViewing(null)} title={viewing?.title || ""} size="lg">
         {viewing && (

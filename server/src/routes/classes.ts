@@ -3,6 +3,7 @@ import { z } from "zod"
 import type { RowDataPacket, ResultSetHeader } from "mysql2"
 import { pool } from "../db.js"
 import { requireOffice, requireSchoolRead } from "../auth.js"
+import { parsePagination, paginationMeta } from "../pagination.js"
 
 const router = Router()
 
@@ -22,11 +23,21 @@ router.use(requireSchoolRead())
 
 router.get("/", async (req, res) => {
   const schoolId = req.user!.schoolId
+  const { page, pageSize, limit, offset } = parsePagination(req.query)
+  
   const where = ["c.school_id = ?"]
   const params: unknown[] = [schoolId]
   for (const [queryKey, column] of [["educationLevelId", "c.education_level_id"], ["gradeLevelId", "c.grade_level_id"], ["academicYearId", "c.academic_year_id"], ["majorId", "c.major_id"]] as const) {
     if (req.query[queryKey]) { where.push(`${column} = ?`); params.push(Number(req.query[queryKey])) }
   }
+  
+  const whereClause = where.join(" AND ")
+  
+  const [[{ total }]] = await pool.query<RowDataPacket[]>(
+    `SELECT COUNT(*) as total FROM classes c WHERE ${whereClause}`,
+    params
+  )
+  
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT c.*, u.name AS teacher_name,
        el.name AS education_level_name,
@@ -40,11 +51,16 @@ router.get("/", async (req, res) => {
      LEFT JOIN grade_levels gl ON gl.id = c.grade_level_id
      LEFT JOIN academic_years ay ON ay.id = c.academic_year_id
      LEFT JOIN majors m ON m.id = c.major_id
-     WHERE ${where.join(" AND ")}
-     ORDER BY el.sort_order ASC, gl.sort_order ASC, c.name ASC`,
-    params,
+     WHERE ${whereClause}
+     ORDER BY el.sort_order ASC, gl.sort_order ASC, c.name ASC
+     LIMIT ? OFFSET ?`,
+    [...params, limit, offset],
   )
-  res.json({ items: rows })
+  
+  res.json({
+    items: rows,
+    pagination: paginationMeta(Number(total), page, pageSize),
+  })
 })
 
 router.get("/:id", async (req, res) => {

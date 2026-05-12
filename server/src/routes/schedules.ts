@@ -3,6 +3,7 @@ import { z } from "zod"
 import type { RowDataPacket, ResultSetHeader } from "mysql2"
 import { pool } from "../db.js"
 import { requireOffice, requireSchoolRead } from "../auth.js"
+import { parsePagination, paginationMeta } from "../pagination.js"
 
 const router = Router()
 
@@ -21,9 +22,18 @@ const schema = z.object({
 router.get("/", async (req, res) => {
   const schoolId = req.user!.schoolId
   const classId = req.query.classId ? Number(req.query.classId) : null
+  const { page, pageSize, limit, offset } = parsePagination(req.query)
+
   const where: string[] = ["s.school_id = ?"]
   const params: unknown[] = [schoolId]
   if (classId) { where.push("s.class_id = ?"); params.push(classId) }
+
+  const whereClause = where.join(" AND ")
+
+  const [[{ total }]] = await pool.query<RowDataPacket[]>(
+    `SELECT COUNT(*) as total FROM schedules s WHERE ${whereClause}`,
+    params
+  )
 
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT s.*, c.name AS class_name, u.name AS teacher_name, subj.name AS subject_name
@@ -31,11 +41,16 @@ router.get("/", async (req, res) => {
      LEFT JOIN classes c ON c.id = s.class_id
      LEFT JOIN users u ON u.id = s.teacher_id
      LEFT JOIN subjects subj ON subj.id = s.subject_id
-     WHERE ${where.join(" AND ")}
-     ORDER BY s.day_of_week ASC, s.start_time ASC`,
-    params,
+     WHERE ${whereClause}
+     ORDER BY s.day_of_week ASC, s.start_time ASC
+     LIMIT ? OFFSET ?`,
+    [...params, limit, offset],
   )
-  res.json({ items: rows })
+
+  res.json({
+    items: rows,
+    pagination: paginationMeta(Number(total), page, pageSize),
+  })
 })
 
 router.post("/", requireOffice(), async (req, res) => {

@@ -2,12 +2,15 @@ import { useEffect, useMemo, useState } from "react"
 import { Link } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
 import Select from "../components/Select"
+import Pagination from "../components/Pagination"
+import { usePagination } from "../hooks/usePagination"
 import {
   Classes,
   Schedules,
   getUser,
   type Klass,
   type Schedule,
+  type PaginationMeta,
 } from "../lib/api"
 
 const DAYS = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
@@ -16,10 +19,12 @@ const DAYS = ["Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu", "Minggu"]
 export default function JadwalPage() {
   const user = getUser()
   const [classes, setClasses] = useState<Klass[]>([])
-  const [classId, setClassId] = useState<number | "">("")
+  const [classId, setClassId] = useState<number | "">("") 
   const [items, setItems] = useState<Schedule[]>([])
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const { page, pageSize, setPage, setPageSize } = usePagination()
 
   async function refresh() {
     setLoading(true)
@@ -27,10 +32,11 @@ export default function JadwalPage() {
     try {
       const [c, s] = await Promise.all([
         Classes.list(),
-        Schedules.list(classId || undefined),
+        Schedules.list({ classId: classId || undefined, page, pageSize }),
       ])
       setClasses(c.items)
       setItems(s.items)
+      setPagination(s.pagination)
       if (!classId && c.items.length > 0) setClassId(c.items[0].id)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal")
@@ -39,7 +45,7 @@ export default function JadwalPage() {
     }
   }
 
-  useEffect(() => { refresh() }, [classId])
+  useEffect(() => { refresh() }, [classId, page, pageSize])
 
   const grouped = useMemo(() => {
     const map = new Map<number, Schedule[]>()
@@ -84,6 +90,18 @@ export default function JadwalPage() {
       </div>
 
       {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">{error}</div>}
+
+      {pagination && (
+        <div className="mt-4">
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={pagination.total}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        </div>
+      )}
 
       <div className="mt-5 grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {DAYS.map((day, idx) => {

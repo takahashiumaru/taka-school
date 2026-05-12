@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import AppLayout from "../components/AppLayout"
 import Select from "../components/Select"
+import Pagination from "../components/Pagination"
 import { AlertBox, EmptyState, TableSkeleton } from "../components/UiState"
+import { usePagination } from "../hooks/usePagination"
 import {
   Attendance,
   Classes,
@@ -33,6 +35,16 @@ export default function AbsensiPage() {
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
+
+  const { page, pageSize, setPage, setPageSize } = usePagination({
+    defaultPageSize: 25,
+    resetDeps: [classId, date],
+  })
+
+  const paginatedStudents = useMemo(() => {
+    const start = (page - 1) * pageSize
+    return students.slice(start, start + pageSize)
+  }, [students, page, pageSize])
 
   useEffect(() => {
     Classes.list().then((r) => {
@@ -149,7 +161,7 @@ export default function AbsensiPage() {
                   </td>
                 </tr>
               )}
-              {students.map((s) => (
+              {paginatedStudents.map((s) => (
                 <tr key={s.id} className="border-t border-slate-100 dark:border-slate-800">
                   <td className="px-4 py-3 font-medium text-slate-900 dark:text-slate-100">{s.name}</td>
                   <td className="px-4 py-3 text-slate-500 dark:text-slate-400 text-xs">{s.nis || "—"}</td>
@@ -181,6 +193,16 @@ export default function AbsensiPage() {
             </tbody>
           </table>
         </div>
+        {students.length > 0 && (
+          <Pagination
+            page={page}
+            pageSize={pageSize}
+            total={students.length}
+            loading={loading}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        )}
       </div>
 
       {students.length > 0 && (
