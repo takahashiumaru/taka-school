@@ -527,6 +527,13 @@ export const Finance = {
   pay: (id: number, data: { amount: number; paymentMethodId?: number | null; note?: string | null }) => apiFetch<{ ok: true; status: string }>(`/api/finance/invoices/${id}/payments`, { method: "POST", body: JSON.stringify(data) }),
 }
 
+export type SppSummary = {
+  totalAmount: number
+  totalPaid: number
+  totalRemaining: number
+  overdueCount: number
+}
+
 export const Spp = {
   list: (params?: { period?: string; status?: string; classId?: number; page?: number; pageSize?: number }) => {
     const q = new URLSearchParams()
@@ -536,7 +543,7 @@ export const Spp = {
     if (params?.page) q.set("page", String(params.page))
     if (params?.pageSize) q.set("pageSize", String(params.pageSize))
     const s = q.toString()
-    return apiFetch<PaginatedResponse<SppInvoice>>(`/api/spp${s ? `?${s}` : ""}`)
+    return apiFetch<PaginatedResponse<SppInvoice> & { summary: SppSummary }>(`/api/spp${s ? `?${s}` : ""}`)
   },
   get: (id: number) => apiFetch<SppInvoice>(`/api/spp/${id}`),
   create: (data: { studentId: number; period: string; amount: number; dueDate: string; note?: string | null }) =>

@@ -12,13 +12,12 @@ import {
   Spp,
   Finance,
   type FinanceInvoice,
-
+  type SppSummary,
   getUser,
   waLink,
   type Klass,
   type SppInvoice,
   type PaginationMeta,
-
 } from "../lib/api"
 
 function currentPeriod(): string {
@@ -35,6 +34,7 @@ export default function SppPage() {
   const user = getUser()
   const [items, setItems] = useState<SppInvoice[]>([])
   const [pagination, setPagination] = useState<PaginationMeta | null>(null)
+  const [summary, setSummary] = useState<SppSummary | null>(null)
   const [financeItems, setFinanceItems] = useState<FinanceInvoice[]>([])
   const [classes, setClasses] = useState<Klass[]>([])
 
@@ -72,6 +72,7 @@ export default function SppPage() {
       ])
       setItems(s.items)
       setPagination(s.pagination)
+      setSummary(s.summary)
       setFinanceItems(f.items)
       setClasses(c.items)
     } catch (e) {
@@ -99,18 +100,14 @@ export default function SppPage() {
     }
   }
 
-  const sppSummary = items.reduce(
-    (acc, inv) => {
-      const amount = Number(inv.amount) || 0
-      const paid = Number(inv.paid_amount) || 0
-      acc.billed += amount
-      acc.paid += paid
-      acc.outstanding += Math.max(amount - paid, 0)
-      if (inv.status === "lewat" || (inv.status !== "lunas" && inv.due_date.slice(0, 10) < new Date().toISOString().slice(0, 10))) acc.overdue_count += 1
-      return acc
-    },
-    { billed: 0, paid: 0, outstanding: 0, overdue_count: 0 },
-  )
+  const sppSummary = summary
+    ? {
+        billed: summary.totalAmount,
+        paid: summary.totalPaid,
+        outstanding: summary.totalRemaining,
+        overdue_count: summary.overdueCount,
+      }
+    : { billed: 0, paid: 0, outstanding: 0, overdue_count: 0 }
 
   if (!user) return null
 

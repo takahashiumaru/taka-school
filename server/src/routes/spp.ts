@@ -52,6 +52,24 @@ router.get("/", async (req, res) => {
   )
   const total = Number(countRows[0].total)
 
+  const [summaryRows] = await pool.query<RowDataPacket[]>(
+    `SELECT 
+       SUM(i.amount) as totalAmount,
+       SUM(i.paid_amount) as totalPaid,
+       SUM(i.amount - i.paid_amount) as totalRemaining,
+       SUM(CASE WHEN i.status = 'overdue' THEN 1 ELSE 0 END) as overdueCount
+     FROM spp_invoices i
+     JOIN students s ON s.id = i.student_id
+     WHERE ${where.join(" AND ")}`,
+    params,
+  )
+  const summary = {
+    totalAmount: Number(summaryRows[0].totalAmount || 0),
+    totalPaid: Number(summaryRows[0].totalPaid || 0),
+    totalRemaining: Number(summaryRows[0].totalRemaining || 0),
+    overdueCount: Number(summaryRows[0].overdueCount || 0),
+  }
+
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT i.*, s.name AS student_name, s.parent_name, s.parent_wa, s.class_id, c.name AS class_name
      FROM spp_invoices i
@@ -65,6 +83,7 @@ router.get("/", async (req, res) => {
   res.json({ 
     items: rows,
     pagination: paginationMeta(total, page, pageSize),
+    summary,
   })
 })
 
