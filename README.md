@@ -15,7 +15,7 @@ Taka School adalah aplikasi manajemen sekolah berbasis web untuk **PAUD, TK, SD,
 
 ### Landing Page — Hero + Preview Dashboard
 
-![Landing page hero dengan preview dashboard TakaSchool](docs/images/takaschool-landing-hero-dashboard.png)
+![Landing page hero dengan preview dashboard TakaSchool](docs/images/takaschool-landing-hero-dashboard-preview.png)
 
 ### Dashboard Admin — Ringkasan Operasional Sekolah
 
@@ -23,11 +23,11 @@ Taka School adalah aplikasi manajemen sekolah berbasis web untuk **PAUD, TK, SD,
 
 ### PPDB — Pencarian Alamat + Titik OpenStreetMap
 
-![Form PPDB dengan pencarian alamat dan titik lokasi OpenStreetMap](docs/images/ppdb-address-map.jpg)
+![Form PPDB dengan pencarian alamat dan titik lokasi OpenStreetMap](docs/images/takaschool-ppdb-registration-location-picker.png)
 
 ### SPP — Dashboard Tagihan dan Pembayaran
 
-![Dashboard SPP dengan ringkasan tagihan, terbayar, sisa piutang, dan overdue](docs/images/spp-dashboard.jpg)
+![Dashboard SPP dengan ringkasan tagihan, terbayar, sisa piutang, dan overdue](docs/images/takaschool-pembayaran-spp.png)
 
 ## Fitur Utama
 
