@@ -1,19 +1,74 @@
 import { Router } from "express"
-import type { RowDataPacket } from "mysql2"
+import { z } from "zod"
+import type { RowDataPacket, ResultSetHeader } from "mysql2"
 import { pool } from "../db.js"
-import { requireAuth } from "../auth.js"
+import { requireOffice, requireSchoolRead } from "../auth.js"
 
 const router = Router()
-router.use(requireAuth())
+router.use(requireSchoolRead())
+
+const id = z.number().int().positive()
+const educationLevelSchema = z.object({ code: z.string().min(1).max(30), name: z.string().min(1).max(80), sortOrder: z.number().int().optional(), isActive: z.boolean().optional() })
+const gradeLevelSchema = z.object({ educationLevelId: id, code: z.string().min(1).max(30), name: z.string().min(1).max(80), sortOrder: z.number().int().optional(), isActive: z.boolean().optional() })
+const academicYearSchema = z.object({ name: z.string().min(1).max(30), startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(), endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(), isActive: z.boolean().optional() })
+const semesterSchema = z.object({ academicYearId: id, name: z.string().min(1).max(40), sortOrder: z.number().int().optional(), startDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(), endDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(), isActive: z.boolean().optional() })
+const majorSchema = z.object({ educationLevelId: id, name: z.string().min(1).max(80), isActive: z.boolean().optional() })
+const subjectSchema = z.object({ educationLevelId: id.nullable().optional(), code: z.string().max(30).nullable().optional(), name: z.string().min(1).max(120), description: z.string().max(255).nullable().optional(), isActive: z.boolean().optional() })
+const teacherSubjectSchema = z.object({ teacherId: id, subjectId: id, classId: id.nullable().optional() })
+const classSubjectSchema = z.object({ classId: id, subjectId: id, teacherId: id.nullable().optional() })
 
 router.get("/metadata", async (req, res) => {
   const schoolId = req.user!.schoolId
   const [educationLevels] = await pool.query<RowDataPacket[]>("SELECT * FROM education_levels WHERE school_id = ? ORDER BY sort_order, name", [schoolId])
-  const [gradeLevels] = await pool.query<RowDataPacket[]>("SELECT * FROM grade_levels WHERE school_id = ? ORDER BY education_level_id, sort_order, name", [schoolId])
+  const [gradeLevels] = await pool.query<RowDataPacket[]>("SELECT gl.*, el.name education_level_name FROM grade_levels gl JOIN education_levels el ON el.id=gl.education_level_id WHERE gl.school_id = ? ORDER BY el.sort_order, gl.sort_order, gl.name", [schoolId])
   const [academicYears] = await pool.query<RowDataPacket[]>("SELECT * FROM academic_years WHERE school_id = ? ORDER BY is_active DESC, start_date DESC, name DESC", [schoolId])
-  const [semesters] = await pool.query<RowDataPacket[]>("SELECT * FROM semesters WHERE school_id = ? ORDER BY academic_year_id, sort_order", [schoolId])
-  const [majors] = await pool.query<RowDataPacket[]>("SELECT * FROM majors WHERE school_id = ? ORDER BY education_level_id, name", [schoolId])
-  res.json({ educationLevels, gradeLevels, academicYears, semesters, majors })
+  const [semesters] = await pool.query<RowDataPacket[]>("SELECT s.*, ay.name academic_year_name FROM semesters s JOIN academic_years ay ON ay.id=s.academic_year_id WHERE s.school_id = ? ORDER BY ay.start_date DESC, s.sort_order", [schoolId])
+  const [majors] = await pool.query<RowDataPacket[]>("SELECT m.*, el.name education_level_name FROM majors m JOIN education_levels el ON el.id=m.education_level_id WHERE m.school_id = ? ORDER BY el.sort_order, m.name", [schoolId])
+  const [subjects] = await pool.query<RowDataPacket[]>(`SELECT s.*, el.name education_level_name FROM subjects s LEFT JOIN education_levels el ON el.id=s.education_level_id WHERE s.school_id=? ORDER BY el.sort_order, s.name`, [schoolId])
+  const [teacherSubjects] = await pool.query<RowDataPacket[]>(`SELECT ts.*, u.name teacher_name, s.name subject_name, c.name class_name FROM teacher_subjects ts JOIN users u ON u.id=ts.teacher_id JOIN subjects s ON s.id=ts.subject_id LEFT JOIN classes c ON c.id=ts.class_id WHERE ts.school_id=? ORDER BY u.name, s.name`, [schoolId])
+  const [classSubjects] = await pool.query<RowDataPacket[]>(`SELECT cs.*, c.name class_name, s.name subject_name, u.name teacher_name FROM class_subjects cs JOIN classes c ON c.id=cs.class_id JOIN subjects s ON s.id=cs.subject_id LEFT JOIN users u ON u.id=cs.teacher_id WHERE cs.school_id=? ORDER BY c.name, s.name`, [schoolId])
+  res.json({ educationLevels, gradeLevels, academicYears, semesters, majors, subjects, teacherSubjects, classSubjects })
 })
+
+router.use(requireOffice())
+
+async function ensureOwn(table: string, itemId: number, schoolId: number, extra = "") {
+  const [r] = await pool.query<RowDataPacket[]>(`SELECT * FROM ${table} WHERE id=? AND school_id=? ${extra} LIMIT 1`, [itemId, schoolId])
+  return r[0]
+}
+async function ensureEducationLevel(schoolId: number, educationLevelId: number) { if (!await ensureOwn("education_levels", educationLevelId, schoolId, "AND is_active=1")) throw new Error("Jenjang tidak valid/aktif") }
+async function ensureYear(schoolId: number, academicYearId: number) { if (!await ensureOwn("academic_years", academicYearId, schoolId)) throw new Error("Tahun ajaran tidak valid") }
+async function setSingleActive(table: "academic_years" | "semesters", schoolId: number, id: number) { await pool.query(`UPDATE ${table} SET is_active=0 WHERE school_id=?`, [schoolId]); await pool.query(`UPDATE ${table} SET is_active=1 WHERE id=? AND school_id=?`, [id, schoolId]) }
+
+router.post("/education-levels", async (req, res) => { const p=educationLevelSchema.safeParse(req.body); if(!p.success) return res.status(400).json({error:"Invalid",details:p.error.issues}); const d=p.data, schoolId=req.user!.schoolId; const [r]=await pool.query<ResultSetHeader>(`INSERT INTO education_levels (school_id,code,name,sort_order,is_active) VALUES (?,?,?,?,?)`,[schoolId,d.code,d.name,d.sortOrder??0,d.isActive===false?0:1]); res.json({id:r.insertId}) })
+router.put("/education-levels/:id", async (req,res)=>{ const p=educationLevelSchema.partial().safeParse(req.body); if(!p.success)return res.status(400).json({error:"Invalid",details:p.error.issues}); const d=p.data, schoolId=req.user!.schoolId, itemId=Number(req.params.id); const fields:string[]=[], params:unknown[]=[]; if(d.code!==undefined){fields.push("code=?");params.push(d.code)} if(d.name!==undefined){fields.push("name=?");params.push(d.name)} if(d.sortOrder!==undefined){fields.push("sort_order=?");params.push(d.sortOrder)} if(d.isActive!==undefined){fields.push("is_active=?");params.push(d.isActive?1:0)} if(fields.length) await pool.query(`UPDATE education_levels SET ${fields.join(",")} WHERE id=? AND school_id=?`,[...params,itemId,schoolId]); res.json({ok:true}) })
+router.delete("/education-levels/:id", async(req,res)=>{ await pool.query(`DELETE FROM education_levels WHERE id=? AND school_id=?`,[Number(req.params.id),req.user!.schoolId]); res.json({ok:true}) })
+
+router.post("/grade-levels", async (req,res)=>{ const p=gradeLevelSchema.safeParse(req.body); if(!p.success)return res.status(400).json({error:"Invalid",details:p.error.issues}); const d=p.data, schoolId=req.user!.schoolId; try{await ensureEducationLevel(schoolId,d.educationLevelId)}catch(e){return res.status(400).json({error:(e as Error).message})} const [r]=await pool.query<ResultSetHeader>(`INSERT INTO grade_levels (school_id,education_level_id,code,name,sort_order,is_active) VALUES (?,?,?,?,?,?)`,[schoolId,d.educationLevelId,d.code,d.name,d.sortOrder??0,d.isActive===false?0:1]); res.json({id:r.insertId}) })
+router.put("/grade-levels/:id", async(req,res)=>{ const p=gradeLevelSchema.partial().safeParse(req.body); if(!p.success)return res.status(400).json({error:"Invalid",details:p.error.issues}); const d=p.data, schoolId=req.user!.schoolId; if(d.educationLevelId) try{await ensureEducationLevel(schoolId,d.educationLevelId)}catch(e){return res.status(400).json({error:(e as Error).message})}; const map:Record<string,unknown>={education_level_id:d.educationLevelId,code:d.code,name:d.name,sort_order:d.sortOrder,is_active:d.isActive===undefined?undefined:d.isActive?1:0}; const f:string[]=[], pa:unknown[]=[]; Object.entries(map).forEach(([k,v])=>{if(v!==undefined){f.push(`${k}=?`);pa.push(v)}}); if(f.length) await pool.query(`UPDATE grade_levels SET ${f.join(",")} WHERE id=? AND school_id=?`,[...pa,Number(req.params.id),schoolId]); res.json({ok:true}) })
+router.delete("/grade-levels/:id", async(req,res)=>{ await pool.query(`DELETE FROM grade_levels WHERE id=? AND school_id=?`,[Number(req.params.id),req.user!.schoolId]); res.json({ok:true}) })
+
+router.post("/academic-years", async(req,res)=>{ const p=academicYearSchema.safeParse(req.body); if(!p.success)return res.status(400).json({error:"Invalid",details:p.error.issues}); const d=p.data, schoolId=req.user!.schoolId; if(d.isActive) await pool.query(`UPDATE academic_years SET is_active=0 WHERE school_id=?`,[schoolId]); const [r]=await pool.query<ResultSetHeader>(`INSERT INTO academic_years (school_id,name,start_date,end_date,is_active) VALUES (?,?,?,?,?)`,[schoolId,d.name,d.startDate??null,d.endDate??null,d.isActive?1:0]); res.json({id:r.insertId}) })
+router.put("/academic-years/:id", async(req,res)=>{ const p=academicYearSchema.partial().safeParse(req.body); if(!p.success)return res.status(400).json({error:"Invalid",details:p.error.issues}); const d=p.data, schoolId=req.user!.schoolId, itemId=Number(req.params.id); if(d.isActive) await pool.query(`UPDATE academic_years SET is_active=0 WHERE school_id=?`,[schoolId]); const map:Record<string,unknown>={name:d.name,start_date:d.startDate,end_date:d.endDate,is_active:d.isActive===undefined?undefined:d.isActive?1:0}; const f:string[]=[], pa:unknown[]=[]; Object.entries(map).forEach(([k,v])=>{if(v!==undefined){f.push(`${k}=?`);pa.push(v)}}); if(f.length) await pool.query(`UPDATE academic_years SET ${f.join(",")} WHERE id=? AND school_id=?`,[...pa,itemId,schoolId]); res.json({ok:true}) })
+router.put("/academic-years/:id/activate", async(req,res)=>{ await setSingleActive("academic_years",req.user!.schoolId,Number(req.params.id)); res.json({ok:true}) })
+router.delete("/academic-years/:id", async(req,res)=>{ await pool.query(`DELETE FROM academic_years WHERE id=? AND school_id=?`,[Number(req.params.id),req.user!.schoolId]); res.json({ok:true}) })
+
+router.post("/semesters", async(req,res)=>{ const p=semesterSchema.safeParse(req.body); if(!p.success)return res.status(400).json({error:"Invalid",details:p.error.issues}); const d=p.data, schoolId=req.user!.schoolId; try{await ensureYear(schoolId,d.academicYearId)}catch(e){return res.status(400).json({error:(e as Error).message})} if(d.isActive) await pool.query(`UPDATE semesters SET is_active=0 WHERE school_id=?`,[schoolId]); const [r]=await pool.query<ResultSetHeader>(`INSERT INTO semesters (school_id,academic_year_id,name,sort_order,start_date,end_date,is_active) VALUES (?,?,?,?,?,?,?)`,[schoolId,d.academicYearId,d.name,d.sortOrder??0,d.startDate??null,d.endDate??null,d.isActive?1:0]); res.json({id:r.insertId}) })
+router.put("/semesters/:id/activate", async(req,res)=>{ await setSingleActive("semesters",req.user!.schoolId,Number(req.params.id)); res.json({ok:true}) })
+router.delete("/semesters/:id", async(req,res)=>{ await pool.query(`DELETE FROM semesters WHERE id=? AND school_id=?`,[Number(req.params.id),req.user!.schoolId]); res.json({ok:true}) })
+
+router.post("/majors", async(req,res)=>{ const p=majorSchema.safeParse(req.body); if(!p.success)return res.status(400).json({error:"Invalid",details:p.error.issues}); const d=p.data, schoolId=req.user!.schoolId; try{await ensureEducationLevel(schoolId,d.educationLevelId)}catch(e){return res.status(400).json({error:(e as Error).message})} const [r]=await pool.query<ResultSetHeader>(`INSERT INTO majors (school_id,education_level_id,name,is_active) VALUES (?,?,?,?)`,[schoolId,d.educationLevelId,d.name,d.isActive===false?0:1]); res.json({id:r.insertId}) })
+router.put("/majors/:id", async(req,res)=>{ const p=majorSchema.partial().safeParse(req.body); if(!p.success)return res.status(400).json({error:"Invalid",details:p.error.issues}); const d=p.data, schoolId=req.user!.schoolId; if(d.educationLevelId) try{await ensureEducationLevel(schoolId,d.educationLevelId)}catch(e){return res.status(400).json({error:(e as Error).message})}; const map:Record<string,unknown>={education_level_id:d.educationLevelId,name:d.name,is_active:d.isActive===undefined?undefined:d.isActive?1:0}; const f:string[]=[], pa:unknown[]=[]; Object.entries(map).forEach(([k,v])=>{if(v!==undefined){f.push(`${k}=?`);pa.push(v)}}); if(f.length) await pool.query(`UPDATE majors SET ${f.join(",")} WHERE id=? AND school_id=?`,[...pa,Number(req.params.id),schoolId]); res.json({ok:true}) })
+router.delete("/majors/:id", async(req,res)=>{ await pool.query(`DELETE FROM majors WHERE id=? AND school_id=?`,[Number(req.params.id),req.user!.schoolId]); res.json({ok:true}) })
+
+router.post("/subjects", async(req,res)=>{ const p=subjectSchema.safeParse(req.body); if(!p.success)return res.status(400).json({error:"Invalid",details:p.error.issues}); const d=p.data, schoolId=req.user!.schoolId; if(d.educationLevelId) try{await ensureEducationLevel(schoolId,d.educationLevelId)}catch(e){return res.status(400).json({error:(e as Error).message})}; const [r]=await pool.query<ResultSetHeader>(`INSERT INTO subjects (school_id,education_level_id,code,name,description,is_active) VALUES (?,?,?,?,?,?)`,[schoolId,d.educationLevelId??null,d.code||null,d.name,d.description??null,d.isActive===false?0:1]); res.json({id:r.insertId}) })
+router.put("/subjects/:id", async(req,res)=>{ const p=subjectSchema.partial().safeParse(req.body); if(!p.success)return res.status(400).json({error:"Invalid",details:p.error.issues}); const d=p.data, schoolId=req.user!.schoolId; if(d.educationLevelId) try{await ensureEducationLevel(schoolId,d.educationLevelId)}catch(e){return res.status(400).json({error:(e as Error).message})}; const map:Record<string,unknown>={education_level_id:d.educationLevelId,code:d.code,name:d.name,description:d.description,is_active:d.isActive===undefined?undefined:d.isActive?1:0}; const f:string[]=[], pa:unknown[]=[]; Object.entries(map).forEach(([k,v])=>{if(v!==undefined){f.push(`${k}=?`);pa.push(v)}}); if(f.length) await pool.query(`UPDATE subjects SET ${f.join(",")} WHERE id=? AND school_id=?`,[...pa,Number(req.params.id),schoolId]); res.json({ok:true}) })
+router.delete("/subjects/:id", async(req,res)=>{ await pool.query(`DELETE FROM subjects WHERE id=? AND school_id=?`,[Number(req.params.id),req.user!.schoolId]); res.json({ok:true}) })
+
+router.post("/teacher-subjects", async(req,res)=>{ const p=teacherSubjectSchema.safeParse(req.body); if(!p.success)return res.status(400).json({error:"Invalid",details:p.error.issues}); const d=p.data, schoolId=req.user!.schoolId; const [r]=await pool.query<ResultSetHeader>(`INSERT INTO teacher_subjects (school_id,teacher_id,subject_id,class_id) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE class_id=VALUES(class_id)`,[schoolId,d.teacherId,d.subjectId,d.classId??null]); res.json({id:r.insertId}) })
+router.delete("/teacher-subjects/:id", async(req,res)=>{ await pool.query(`DELETE FROM teacher_subjects WHERE id=? AND school_id=?`,[Number(req.params.id),req.user!.schoolId]); res.json({ok:true}) })
+
+router.post("/class-subjects", async(req,res)=>{ const p=classSubjectSchema.safeParse(req.body); if(!p.success)return res.status(400).json({error:"Invalid",details:p.error.issues}); const d=p.data, schoolId=req.user!.schoolId; const [r]=await pool.query<ResultSetHeader>(`INSERT INTO class_subjects (school_id,class_id,subject_id,teacher_id) VALUES (?,?,?,?) ON DUPLICATE KEY UPDATE teacher_id=VALUES(teacher_id)`,[schoolId,d.classId,d.subjectId,d.teacherId??null]); res.json({id:r.insertId}) })
+router.delete("/class-subjects/:id", async(req,res)=>{ await pool.query(`DELETE FROM class_subjects WHERE id=? AND school_id=?`,[Number(req.params.id),req.user!.schoolId]); res.json({ok:true}) })
 
 export default router

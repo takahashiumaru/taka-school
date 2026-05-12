@@ -1,26 +1,16 @@
 import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
-import Modal from "../components/Modal"
+import ConfirmDialog from "../components/ConfirmDialog"
 import { Teachers, getUser, type Teacher } from "../lib/api"
-
-type FormState = {
-  id?: number
-  name: string
-  email: string
-  password: string
-  isActive: boolean
-}
-
-const empty: FormState = { name: "", email: "", password: "", isActive: true }
 
 export default function GuruPage() {
   const user = getUser()
   const [items, setItems] = useState<Teacher[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [open, setOpen] = useState(false)
-  const [form, setForm] = useState<FormState>(empty)
-  const [submitting, setSubmitting] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Teacher | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   async function refresh() {
     setLoading(true)
@@ -39,58 +29,17 @@ export default function GuruPage() {
     refresh()
   }, [])
 
-  function openNew() {
-    setForm(empty)
-    setOpen(true)
-  }
-
-  function openEdit(t: Teacher) {
-    setForm({
-      id: t.id,
-      name: t.name,
-      email: t.email,
-      password: "",
-      isActive: !!t.is_active,
-    })
-    setOpen(true)
-  }
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault()
-    setSubmitting(true)
-    setError(null)
+  async function confirmDelete() {
+    if (!deleteTarget) return
+    setDeleting(true)
     try {
-      if (form.id) {
-        const payload: Record<string, unknown> = {
-          name: form.name,
-          email: form.email,
-          isActive: form.isActive,
-        }
-        if (form.password) payload.password = form.password
-        await Teachers.update(form.id, payload)
-      } else {
-        await Teachers.create({
-          name: form.name,
-          email: form.email,
-          password: form.password,
-        })
-      }
-      setOpen(false)
+      await Teachers.delete(deleteTarget.id)
+      setDeleteTarget(null)
       refresh()
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal menyimpan")
+      setError(e instanceof Error ? e.message : "Gagal menghapus")
     } finally {
-      setSubmitting(false)
-    }
-  }
-
-  async function handleDelete(t: Teacher) {
-    if (!confirm(`Hapus guru "${t.name}"?`)) return
-    try {
-      await Teachers.delete(t.id)
-      refresh()
-    } catch (e) {
-      alert(e instanceof Error ? e.message : "Gagal menghapus")
+      setDeleting(false)
     }
   }
 
@@ -103,7 +52,7 @@ export default function GuruPage() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Data Guru</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{items.length} guru terdaftar</p>
         </div>
-        <button onClick={openNew} className="btn-primary">+ Tambah Guru</button>
+        <Link to="/guru/baru" className="btn-primary">+ Tambah Guru</Link>
       </div>
 
       {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">{error}</div>}
@@ -132,8 +81,8 @@ export default function GuruPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3 text-right whitespace-nowrap">
-                    <button onClick={() => openEdit(t)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 mr-1 dark:text-primary-300 dark:hover:bg-primary-500/10">Edit</button>
-                    <button onClick={() => handleDelete(t)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
+                    <Link to={`/guru/${t.id}/edit`} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 mr-1 dark:text-primary-300 dark:hover:bg-primary-500/10">Edit</Link>
+                    <button onClick={() => setDeleteTarget(t)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
                   </td>
                 </tr>
               ))}
@@ -142,47 +91,7 @@ export default function GuruPage() {
         </div>
       </div>
 
-      <Modal open={open} onClose={() => setOpen(false)} title={form.id ? "Edit Guru" : "Tambah Guru"}>
-        <form onSubmit={handleSave} className="grid gap-3">
-          <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Lengkap *</span>
-            <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-base" />
-          </label>
-          <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Email *</span>
-            <input required type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className="input-base" />
-          </label>
-          <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-              Password {form.id ? "(kosongkan untuk tidak ganti)" : "*"}
-            </span>
-            <input
-              type="password"
-              value={form.password}
-              onChange={(e) => setForm({ ...form, password: e.target.value })}
-              required={!form.id}
-              minLength={form.id ? 0 : 6}
-              className="input-base"
-            />
-          </label>
-          {form.id && (
-            <label className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                checked={form.isActive}
-                onChange={(e) => setForm({ ...form, isActive: e.target.checked })}
-              />
-              <span className="text-sm text-slate-700 dark:text-slate-300">Aktif</span>
-            </label>
-          )}
-          <div className="flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setOpen(false)} className="btn-secondary">Batal</button>
-            <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-50">
-              {submitting ? "Menyimpan…" : form.id ? "Simpan" : "Tambah"}
-            </button>
-          </div>
-        </form>
-      </Modal>
+      <ConfirmDialog open={!!deleteTarget} title="Hapus guru?" message={`Guru ${deleteTarget?.name || "ini"} akan dihapus permanen.`} confirmLabel="Hapus" loading={deleting} onClose={() => setDeleteTarget(null)} onConfirm={confirmDelete} />
     </AppLayout>
   )
 }

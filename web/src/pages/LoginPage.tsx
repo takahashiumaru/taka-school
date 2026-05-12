@@ -14,8 +14,8 @@ export default function LoginPage() {
 
   function fillDemo(r: "admin" | "guru") {
     setRole(r)
-    setEmail(r === "admin" ? "admin@demo.id" : "guru@demo.id")
-    setPassword(r === "admin" ? "admin123" : "guru123")
+    setEmail(r === "admin" ? "admin@takaschool-demo.id" : "bu.siti.kurniawan@takaschool-demo.id")
+    setPassword("demo12345")
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -106,7 +106,7 @@ export default function LoginPage() {
                 className="text-left rounded-lg bg-white px-2 py-1.5 ring-1 ring-primary-100 hover:bg-primary-100 dark:bg-slate-900 dark:ring-primary-500/40 dark:hover:bg-primary-500/15"
               >
                 <div className="font-semibold">Admin</div>
-                <div className="text-slate-600 dark:text-slate-400">admin@demo.id / admin123</div>
+                <div className="text-slate-600 dark:text-slate-400">admin@takaschool-demo.id / demo12345</div>
               </button>
               <button
                 type="button"
@@ -114,7 +114,7 @@ export default function LoginPage() {
                 className="text-left rounded-lg bg-white px-2 py-1.5 ring-1 ring-primary-100 hover:bg-primary-100 dark:bg-slate-900 dark:ring-primary-500/40 dark:hover:bg-primary-500/15"
               >
                 <div className="font-semibold">Guru</div>
-                <div className="text-slate-600 dark:text-slate-400">guru@demo.id / guru123</div>
+                <div className="text-slate-600 dark:text-slate-400">bu.siti.kurniawan@takaschool-demo.id / demo12345</div>
               </button>
             </div>
           </div>

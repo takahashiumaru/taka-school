@@ -4,6 +4,7 @@ import { z } from "zod"
 import type { RowDataPacket, ResultSetHeader } from "mysql2"
 import { pool } from "../db.js"
 import { requireAuth, signToken } from "../auth.js"
+import { rateLimit } from "../rateLimit.js"
 
 const router = Router()
 
@@ -28,7 +29,7 @@ function slugify(s: string) {
     .slice(0, 60) || "sekolah"
 }
 
-router.post("/login", async (req, res) => {
+router.post("/login", rateLimit({ keyPrefix: "auth-login", limit: 5, windowMs: 5 * 60_000 }), async (req, res) => {
   const parsed = loginSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: "Email / password tidak valid" })
   const { email, password } = parsed.data
@@ -64,7 +65,7 @@ router.post("/login", async (req, res) => {
   })
 })
 
-router.post("/register-school", async (req, res) => {
+router.post("/register-school", rateLimit({ keyPrefix: "auth-register-school", limit: 3, windowMs: 10 * 60_000 }), async (req, res) => {
   const parsed = registerSchoolSchema.safeParse(req.body)
   if (!parsed.success) {
     return res.status(400).json({ error: "Input tidak valid", issues: parsed.error.issues })

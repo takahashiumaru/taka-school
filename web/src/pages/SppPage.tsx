@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
+import { Link } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
-import Modal from "../components/Modal"
 import Select from "../components/Select"
 import MonthPicker from "../components/MonthPicker"
 import ConfirmDialog from "../components/ConfirmDialog"
@@ -8,12 +8,14 @@ import { AlertBox, EmptyState, TableSkeleton } from "../components/UiState"
 import {
   Classes,
   Spp,
-  Students,
+  Finance,
+  type FinanceInvoice,
+
   getUser,
   waLink,
   type Klass,
   type SppInvoice,
-  type Student,
+
 } from "../lib/api"
 
 function currentPeriod(): string {
@@ -29,17 +31,16 @@ function formatRp(n: number | string): string {
 export default function SppPage() {
   const user = getUser()
   const [items, setItems] = useState<SppInvoice[]>([])
+  const [financeItems, setFinanceItems] = useState<FinanceInvoice[]>([])
+  const [summary, setSummary] = useState<{ invoices: number; billed: number; paid: number; outstanding: number; overdue_count: number } | null>(null)
   const [classes, setClasses] = useState<Klass[]>([])
-  const [students, setStudents] = useState<Student[]>([])
+
   const [period, setPeriod] = useState(currentPeriod())
   const [statusFilter, setStatusFilter] = useState(() => new URLSearchParams(window.location.search).get("status") || "")
   const [classFilter, setClassFilter] = useState<number | "">("")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [batchOpen, setBatchOpen] = useState(false)
-  const [payOpen, setPayOpen] = useState<SppInvoice | null>(null)
-  const [createOpen, setCreateOpen] = useState(false)
-  const [submitting, setSubmitting] = useState(false)
+
   const [deleteTarget, setDeleteTarget] = useState<SppInvoice | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -47,18 +48,24 @@ export default function SppPage() {
     setLoading(true)
     setError(null)
     try {
-      const [s, c, st] = await Promise.all([
+      const [s, f, sum, c] = await Promise.all([
         Spp.list({
           period: period || undefined,
           status: statusFilter || undefined,
           classId: classFilter || undefined,
         }),
+        Finance.invoices({
+          period: period || undefined,
+          status: statusFilter === "lunas" ? "paid" : statusFilter === "belum" ? "unpaid" : statusFilter === "sebagian" ? "partial" : statusFilter === "lewat" ? "overdue" : undefined,
+          classId: classFilter || undefined,
+        }).catch(() => ({ items: [] })),
+        Finance.summary().catch(() => null),
         Classes.list(),
-        Students.list({ status: "aktif" }),
       ])
       setItems(s.items)
+      setFinanceItems(f.items)
+      setSummary(sum)
       setClasses(c.items)
-      setStudents(st.items)
     } catch (e) {
       setError(e instanceof Error ? e.message : "Gagal memuat")
     } finally {
@@ -94,8 +101,8 @@ export default function SppPage() {
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Kelola tagihan & pembayaran SPP siswa</p>
         </div>
         <div className="flex gap-2">
-          <button onClick={() => setCreateOpen(true)} className="btn-secondary">+ Tagihan Manual</button>
-          <button onClick={() => setBatchOpen(true)} className="btn-primary">+ Generate Tagihan</button>
+          <Link to="/spp/baru" className="btn-secondary">+ Tagihan Manual</Link>
+          <Link to="/spp/generate" className="btn-primary">+ Generate Tagihan</Link>
         </div>
       </div>
 
@@ -128,6 +135,37 @@ export default function SppPage() {
         </div>
       </div>
 
+      {summary && (
+        <div className="mt-5 grid sm:grid-cols-4 gap-3">
+          <SummaryCard label="Total Tagihan" value={formatRp(summary.billed)} />
+          <SummaryCard label="Terbayar" value={formatRp(summary.paid)} tone="emerald" />
+          <SummaryCard label="Sisa Piutang" value={formatRp(summary.outstanding)} tone="amber" />
+          <SummaryCard label="Overdue" value={`${summary.overdue_count || 0} invoice`} tone="rose" />
+        </div>
+      )}
+
+      {financeItems.length > 0 && (
+        <div className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden dark:bg-slate-900 dark:ring-slate-800">
+          <div className="px-4 py-3 border-b border-slate-100 dark:border-slate-800">
+            <h2 className="font-bold text-slate-900 dark:text-slate-100">Invoice Finance Baru</h2>
+            <p className="text-xs text-slate-500">Mendukung multi item, diskon, denda, pembayaran parsial, dan reminder WhatsApp.</p>
+          </div>
+          <div className="overflow-x-auto"><table className="w-full text-sm"><tbody>
+            {financeItems.slice(0, 8).map((inv) => (
+              <tr key={inv.id} className="border-t border-slate-100 dark:border-slate-800">
+                <td className="px-4 py-3 font-semibold">{inv.invoice_no}<div className="text-xs font-normal text-slate-500">{inv.student_name} • {inv.class_name || "—"}</div></td>
+                <td className="px-4 py-3">{inv.period || "—"}</td>
+                <td className="px-4 py-3">{formatRp(inv.total_amount)}<div className="text-xs text-slate-500">dibayar {formatRp(inv.paid_amount)}</div></td>
+                <td className="px-4 py-3"><FinanceStatus status={inv.status} /></td>
+                <td className="px-4 py-3 text-right">
+                  {inv.parent_wa && <a className="btn-secondary-sm" target="_blank" rel="noreferrer" href={waLink(inv.parent_wa, `Yth. ${inv.parent_name || "Bapak/Ibu"}, tagihan ${inv.invoice_no} ananda ${inv.student_name} sebesar ${formatRp(inv.total_amount)} tersisa ${formatRp(Number(inv.total_amount) - Number(inv.paid_amount))}, jatuh tempo ${inv.due_date.slice(0,10)}. Terima kasih.`) || "#"}>Reminder WA</a>}
+                </td>
+              </tr>
+            ))}
+          </tbody></table></div>
+        </div>
+      )}
+
       {error && <div className="mt-4"><AlertBox>{error}</AlertBox></div>}
 
       <div className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden dark:bg-slate-900 dark:ring-slate-800">
@@ -150,7 +188,7 @@ export default function SppPage() {
               {!loading && items.length === 0 && (
                 <tr>
                   <td colSpan={8}>
-                    <EmptyState title="Belum ada tagihan" desc="Generate tagihan SPP untuk siswa aktif atau ubah filter periode/status." action={<button onClick={() => setBatchOpen(true)} className="btn-primary-sm">+ Generate Tagihan</button>} />
+                    <EmptyState title="Belum ada tagihan" desc="Generate tagihan SPP untuk siswa aktif atau ubah filter periode/status." action={<Link to="/spp/generate" className="btn-primary-sm">+ Generate Tagihan</Link>} />
                   </td>
                 </tr>
               )}
@@ -172,9 +210,9 @@ export default function SppPage() {
                         className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-300 dark:bg-emerald-500/10 dark:hover:bg-emerald-500/20 mr-1"
                       >WA</a>
                     )}
-                    <button onClick={() => setPayOpen(inv)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10 mr-1">
+                    <Link to={`/spp/${inv.id}/bayar`} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10 mr-1">
                       {inv.status === "lunas" ? "Detail" : "Bayar"}
-                    </button>
+                    </Link>
                     <button onClick={() => setDeleteTarget(inv)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
                   </td>
                 </tr>
@@ -184,31 +222,6 @@ export default function SppPage() {
         </div>
       </div>
 
-      <BatchModal
-        open={batchOpen}
-        onClose={() => setBatchOpen(false)}
-        classes={classes}
-        defaultPeriod={period}
-        onSuccess={() => { setBatchOpen(false); refresh() }}
-        submitting={submitting}
-        setSubmitting={setSubmitting}
-      />
-
-      <CreateInvoiceModal
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
-        students={students}
-        defaultPeriod={period}
-        onSuccess={() => { setCreateOpen(false); refresh() }}
-        submitting={submitting}
-        setSubmitting={setSubmitting}
-      />
-
-      <PayModal
-        invoice={payOpen}
-        onClose={() => setPayOpen(null)}
-        onSuccess={() => { setPayOpen(null); refresh() }}
-      />
 
       <ConfirmDialog
         open={!!deleteTarget}
@@ -223,6 +236,27 @@ export default function SppPage() {
   )
 }
 
+function SummaryCard({ label, value, tone = "slate" }: { label: string; value: string; tone?: "slate" | "emerald" | "amber" | "rose" }) {
+  const tones = {
+    slate: "bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100",
+    emerald: "bg-emerald-50 dark:bg-emerald-500/10 text-emerald-800 dark:text-emerald-200",
+    amber: "bg-amber-50 dark:bg-amber-500/10 text-amber-800 dark:text-amber-200",
+    rose: "bg-rose-50 dark:bg-rose-500/10 text-rose-800 dark:text-rose-200",
+  }
+  return <div className={`rounded-2xl p-4 ring-1 ring-slate-200 dark:ring-slate-800 ${tones[tone]}`}><div className="text-xs font-semibold opacity-70">{label}</div><div className="text-xl font-bold mt-1">{value}</div></div>
+}
+
+function FinanceStatus({ status }: { status: FinanceInvoice["status"] }) {
+  const map: Record<FinanceInvoice["status"], string> = {
+    unpaid: "bg-slate-100 text-slate-700 dark:bg-slate-700/40 dark:text-slate-300",
+    partial: "bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-300",
+    paid: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
+    overdue: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
+    cancelled: "bg-slate-100 text-slate-500 dark:bg-slate-700/40 dark:text-slate-400",
+  }
+  return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${map[status]}`}>{status}</span>
+}
+
 function SppStatus({ status }: { status: SppInvoice["status"] }) {
   const map: Record<SppInvoice["status"], string> = {
     belum: "bg-slate-100 text-slate-700 dark:bg-slate-700/40 dark:text-slate-300",
@@ -231,243 +265,4 @@ function SppStatus({ status }: { status: SppInvoice["status"] }) {
     lewat: "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300",
   }
   return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${map[status]}`}>{status}</span>
-}
-
-function BatchModal({
-  open, onClose, classes, defaultPeriod, onSuccess, submitting, setSubmitting,
-}: {
-  open: boolean
-  onClose: () => void
-  classes: Klass[]
-  defaultPeriod: string
-  onSuccess: () => void
-  submitting: boolean
-  setSubmitting: (v: boolean) => void
-}) {
-  const [classId, setClassId] = useState<number | "">("")
-  const [period, setPeriod] = useState(defaultPeriod)
-  const [amount, setAmount] = useState(150000)
-  const [dueDate, setDueDate] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [result, setResult] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (open) {
-      setClassId("")
-      setPeriod(defaultPeriod)
-      setAmount(150000)
-      setError(null)
-      setResult(null)
-      const [y, m] = defaultPeriod.split("-").map(Number)
-      const d = new Date(y, m - 1, 10)
-      setDueDate(d.toISOString().slice(0, 10))
-    }
-  }, [open, defaultPeriod])
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setSubmitting(true)
-    setError(null)
-    setResult(null)
-    try {
-      const r = await Spp.batch({
-        classId: classId || null,
-        period,
-        amount,
-        dueDate,
-      })
-      setResult(`Berhasil membuat ${r.created} tagihan baru dari ${r.total} siswa.`)
-      setTimeout(onSuccess, 1500)
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <Modal open={open} onClose={onClose} title="Generate Tagihan SPP">
-      <form onSubmit={handleSubmit} className="grid gap-3">
-        <p className="text-sm text-slate-600">
-          Buat tagihan SPP untuk semua siswa aktif sekaligus. Tagihan yang sudah ada (untuk periode & siswa yang sama) akan dilewati.
-        </p>
-        <div>
-          <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kelas</span>
-          <Select
-            value={classId === "" ? "" : String(classId)}
-            onChange={(v) => setClassId(v ? Number(v) : "")}
-            options={[{ value: "", label: "Semua kelas" }, ...classes.map((c) => ({ value: String(c.id), label: c.name }))]}
-          />
-        </div>
-        <div>
-          <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Periode (bulan)</span>
-          <MonthPicker value={period} onChange={setPeriod} />
-        </div>
-        <label className="block">
-          <span className="block text-xs font-semibold text-slate-700 mb-1">Nominal (Rp)</span>
-          <input type="number" required min={0} value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="input-base" />
-        </label>
-        <label className="block">
-          <span className="block text-xs font-semibold text-slate-700 mb-1">Jatuh Tempo</span>
-          <input type="date" required value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="input-base" />
-        </label>
-        {error && <div className="rounded-lg bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-2">{error}</div>}
-        {result && <div className="rounded-lg bg-emerald-50 ring-1 ring-emerald-200 text-emerald-700 text-sm p-2">{result}</div>}
-        <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="btn-secondary">Batal</button>
-          <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-50">{submitting ? "Memproses…" : "Generate"}</button>
-        </div>
-      </form>
-    </Modal>
-  )
-}
-
-function CreateInvoiceModal({
-  open, onClose, students, defaultPeriod, onSuccess, submitting, setSubmitting,
-}: {
-  open: boolean
-  onClose: () => void
-  students: Student[]
-  defaultPeriod: string
-  onSuccess: () => void
-  submitting: boolean
-  setSubmitting: (v: boolean) => void
-}) {
-  const [studentId, setStudentId] = useState<number | "">("")
-  const [period, setPeriod] = useState(defaultPeriod)
-  const [amount, setAmount] = useState(150000)
-  const [dueDate, setDueDate] = useState("")
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (open) {
-      setStudentId(students[0]?.id ?? "")
-      setPeriod(defaultPeriod)
-      setAmount(150000)
-      setError(null)
-      const [y, m] = defaultPeriod.split("-").map(Number)
-      const d = new Date(y, m - 1, 10)
-      setDueDate(d.toISOString().slice(0, 10))
-    }
-  }, [open, defaultPeriod, students])
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    if (!studentId) return
-    setSubmitting(true)
-    setError(null)
-    try {
-      await Spp.create({ studentId: Number(studentId), period, amount, dueDate })
-      onSuccess()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <Modal open={open} onClose={onClose} title="Tambah Tagihan SPP">
-      <form onSubmit={handleSubmit} className="grid gap-3">
-        <div>
-          <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Siswa *</span>
-          <Select
-            value={studentId === "" ? "" : String(studentId)}
-            onChange={(v) => setStudentId(v ? Number(v) : "")}
-            placeholder="Pilih siswa"
-            required
-            options={students.map((s) => ({ value: String(s.id), label: s.name, hint: s.class_name || undefined }))}
-          />
-        </div>
-        <div>
-          <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Periode</span>
-          <MonthPicker value={period} onChange={setPeriod} />
-        </div>
-        <label className="block">
-          <span className="block text-xs font-semibold text-slate-700 mb-1">Nominal (Rp)</span>
-          <input type="number" required min={0} value={amount} onChange={(e) => setAmount(Number(e.target.value))} className="input-base" />
-        </label>
-        <label className="block">
-          <span className="block text-xs font-semibold text-slate-700 mb-1">Jatuh Tempo</span>
-          <input type="date" required value={dueDate} onChange={(e) => setDueDate(e.target.value)} className="input-base" />
-        </label>
-        {error && <div className="rounded-lg bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-2">{error}</div>}
-        <div className="flex justify-end gap-2 pt-1">
-          <button type="button" onClick={onClose} className="btn-secondary">Batal</button>
-          <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-50">{submitting ? "Menyimpan…" : "Tambah"}</button>
-        </div>
-      </form>
-    </Modal>
-  )
-}
-
-function PayModal({
-  invoice, onClose, onSuccess,
-}: {
-  invoice: SppInvoice | null
-  onClose: () => void
-  onSuccess: () => void
-}) {
-  const [paidAmount, setPaidAmount] = useState(0)
-  const [method, setMethod] = useState<"cash" | "transfer" | "lain">("cash")
-  const [submitting, setSubmitting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-
-  useEffect(() => {
-    if (invoice) {
-      setPaidAmount(Number(invoice.paid_amount) || Number(invoice.amount))
-      setMethod((invoice.method as "cash" | "transfer" | "lain") || "cash")
-      setError(null)
-    }
-  }, [invoice])
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault()
-    if (!invoice) return
-    setSubmitting(true)
-    setError(null)
-    try {
-      await Spp.pay(invoice.id, { paidAmount, method })
-      onSuccess()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
-  return (
-    <Modal open={!!invoice} onClose={onClose} title="Catat Pembayaran SPP">
-      {invoice && (
-        <form onSubmit={handleSave} className="grid gap-3">
-          <div className="rounded-xl bg-slate-50 dark:bg-slate-800/50 dark:ring-1 dark:ring-slate-700 p-3 text-sm">
-            <div><span className="text-slate-500 dark:text-slate-400">Siswa:</span> <span className="font-medium dark:text-slate-100">{invoice.student_name}</span></div>
-            <div><span className="text-slate-500 dark:text-slate-400">Periode:</span> {invoice.period}</div>
-            <div><span className="text-slate-500 dark:text-slate-400">Tagihan:</span> {formatRp(invoice.amount)}</div>
-          </div>
-          <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 mb-1">Jumlah Dibayar (Rp)</span>
-            <input type="number" required min={0} value={paidAmount} onChange={(e) => setPaidAmount(Number(e.target.value))} className="input-base" />
-          </label>
-          <div>
-            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Metode</span>
-            <Select
-              value={method}
-              onChange={(v) => setMethod(v as "cash" | "transfer" | "lain")}
-              options={[
-                { value: "cash", label: "Tunai" },
-                { value: "transfer", label: "Transfer" },
-                { value: "lain", label: "Lainnya" },
-              ]}
-            />
-          </div>
-          {error && <div className="rounded-lg bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-2">{error}</div>}
-          <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={onClose} className="btn-secondary">Tutup</button>
-            <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-50">{submitting ? "Menyimpan…" : "Simpan"}</button>
-          </div>
-        </form>
-      )}
-    </Modal>
-  )
 }

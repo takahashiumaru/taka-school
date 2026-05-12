@@ -32,6 +32,19 @@ router.get("/", async (req, res) => {
   res.json({ items: rows })
 })
 
+router.get("/:id", async (req, res) => {
+  const schoolId = req.user!.schoolId
+  const id = Number(req.params.id)
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT r.*, s.name AS student_name, c.name AS class_name
+     FROM reports r JOIN students s ON s.id = r.student_id LEFT JOIN classes c ON c.id = s.class_id
+     WHERE r.id = ? AND r.school_id = ?`,
+    [id, schoolId],
+  )
+  if (!rows.length) return res.status(404).json({ error: "Rapor tidak ditemukan" })
+  res.json(rows[0])
+})
+
 router.post("/", async (req, res) => {
   const schoolId = req.user!.schoolId
   const parsed = schema.safeParse(req.body)

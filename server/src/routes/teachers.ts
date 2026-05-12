@@ -3,7 +3,7 @@ import { z } from "zod"
 import bcrypt from "bcryptjs"
 import type { RowDataPacket, ResultSetHeader } from "mysql2"
 import { pool } from "../db.js"
-import { requireAuth } from "../auth.js"
+import { requireAdmin, requireSchoolRead } from "../auth.js"
 
 const router = Router()
 
@@ -14,7 +14,7 @@ const teacherSchema = z.object({
   isActive: z.boolean().optional(),
 })
 
-router.use(requireAuth())
+router.use(requireSchoolRead())
 
 router.get("/", async (req, res) => {
   const schoolId = req.user!.schoolId
@@ -27,7 +27,7 @@ router.get("/", async (req, res) => {
   res.json({ items: rows })
 })
 
-router.post("/", requireAuth(), async (req, res) => {
+router.post("/", requireAdmin(), async (req, res) => {
   const schoolId = req.user!.schoolId
   const parsed = teacherSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: "Invalid", details: parsed.error.issues })
@@ -47,7 +47,7 @@ router.post("/", requireAuth(), async (req, res) => {
   }
 })
 
-router.put("/:id", requireAuth(), async (req, res) => {
+router.put("/:id", requireAdmin(), async (req, res) => {
   const schoolId = req.user!.schoolId
   const id = Number(req.params.id)
   const parsed = teacherSchema.partial().safeParse(req.body)
@@ -72,7 +72,7 @@ router.put("/:id", requireAuth(), async (req, res) => {
   res.json({ ok: true })
 })
 
-router.delete("/:id", requireAuth(), async (req, res) => {
+router.delete("/:id", requireAdmin(), async (req, res) => {
   const schoolId = req.user!.schoolId
   const id = Number(req.params.id)
   await pool.query(

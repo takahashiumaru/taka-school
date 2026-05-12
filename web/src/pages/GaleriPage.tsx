@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react"
+import { Link } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
 import Modal from "../components/Modal"
+import ConfirmDialog from "../components/ConfirmDialog"
 import {
   Galleries,
   uploadFile,
@@ -8,30 +10,18 @@ import {
   type GalleryItem,
 } from "../lib/api"
 
-type FormState = {
-  id?: number
-  title: string
-  description: string
-  coverUrl: string
-  eventDate: string
-}
-
-const empty: FormState = { title: "", description: "", coverUrl: "", eventDate: "" }
 
 export default function GaleriPage() {
   const [items, setItems] = useState<Gallery[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [open, setOpen] = useState(false)
-  const [form, setForm] = useState<FormState>(empty)
-  const [submitting, setSubmitting] = useState(false)
   const [viewing, setViewing] = useState<(Gallery & { items: GalleryItem[] }) | null>(null)
   const [photoUrl, setPhotoUrl] = useState("")
   const [photoCaption, setPhotoCaption] = useState("")
   const [uploading, setUploading] = useState(false)
-  const [coverUploading, setCoverUploading] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<Gallery | null>(null)
+  const [photoDeleteTarget, setPhotoDeleteTarget] = useState<number | null>(null)
   const photoFileRef = useRef<HTMLInputElement>(null)
-  const coverFileRef = useRef<HTMLInputElement>(null)
   const bulkFileRef = useRef<HTMLInputElement>(null)
 
   async function refresh() {
@@ -49,59 +39,10 @@ export default function GaleriPage() {
 
   useEffect(() => { refresh() }, [])
 
-  function openNew() { setForm(empty); setOpen(true) }
-  function openEdit(g: Gallery) {
-    setForm({
-      id: g.id,
-      title: g.title,
-      description: g.description ?? "",
-      coverUrl: g.cover_url ?? "",
-      eventDate: g.event_date ? g.event_date.slice(0, 10) : "",
-    })
-    setOpen(true)
-  }
-
-  async function handleCoverFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0]
-    if (!file) return
-    setCoverUploading(true)
-    try {
-      const r = await uploadFile(file)
-      setForm((f) => ({ ...f, coverUrl: r.url }))
-    } catch (err) {
-      alert(err instanceof Error ? err.message : "Upload gagal")
-    } finally {
-      setCoverUploading(false)
-      e.target.value = ""
-    }
-  }
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault()
-    setSubmitting(true)
-    setError(null)
-    try {
-      const payload = {
-        title: form.title,
-        description: form.description || null,
-        coverUrl: form.coverUrl || null,
-        eventDate: form.eventDate || null,
-      }
-      if (form.id) await Galleries.update(form.id, payload)
-      else await Galleries.create(payload)
-      setOpen(false)
-      refresh()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal")
-    } finally {
-      setSubmitting(false)
-    }
-  }
-
   async function handleDelete(g: Gallery) {
-    if (!confirm(`Hapus album "${g.title}" beserta semua fotonya?`)) return
     try {
       await Galleries.delete(g.id)
+      setDeleteTarget(null)
       refresh()
     } catch (e) {
       alert(e instanceof Error ? e.message : "Gagal")
@@ -173,9 +114,9 @@ export default function GaleriPage() {
 
   async function handleRemovePhoto(itemId: number) {
     if (!viewing) return
-    if (!confirm("Hapus foto ini?")) return
     try {
       await Galleries.removeItem(viewing.id, itemId)
+      setPhotoDeleteTarget(null)
       const data = await Galleries.get(viewing.id)
       setViewing(data)
       refresh()
@@ -191,7 +132,7 @@ export default function GaleriPage() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Galeri Kegiatan</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">Album foto kegiatan sekolah</p>
         </div>
-        <button onClick={openNew} className="btn-primary">+ Album Baru</button>
+        <Link to="/galeri/baru" className="btn-primary">+ Album Baru</Link>
       </div>
 
       {error && <div className="mt-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-700 text-sm p-3 dark:bg-rose-500/10 dark:ring-rose-500/30 dark:text-rose-300">{error}</div>}
@@ -219,59 +160,12 @@ export default function GaleriPage() {
               </div>
             </button>
             <div className="px-4 pb-3 flex gap-2">
-              <button onClick={() => openEdit(g)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10">Edit</button>
-              <button onClick={() => handleDelete(g)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
+              <Link to={`/galeri/${g.id}/edit`} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10">Edit</Link>
+              <button onClick={() => setDeleteTarget(g)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
             </div>
           </div>
         ))}
       </div>
-
-      <Modal open={open} onClose={() => setOpen(false)} title={form.id ? "Edit Album" : "Album Baru"}>
-        <form onSubmit={handleSave} className="grid gap-3">
-          <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Judul *</span>
-            <input required value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} className="input-base" />
-          </label>
-          <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Tanggal Kegiatan</span>
-            <input type="date" value={form.eventDate} onChange={(e) => setForm({ ...form, eventDate: e.target.value })} className="input-base" />
-          </label>
-          <div>
-            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Cover Album</span>
-            {form.coverUrl && (
-              <div className="mb-2 relative inline-block">
-                <img src={form.coverUrl} alt="" className="h-24 rounded-lg ring-1 ring-slate-200 object-cover dark:ring-slate-700" />
-                <button type="button" onClick={() => setForm({ ...form, coverUrl: "" })} className="absolute top-1 right-1 px-1.5 py-0.5 rounded-md text-xs bg-rose-600 text-white">×</button>
-              </div>
-            )}
-            <div className="flex gap-2">
-              <input
-                value={form.coverUrl}
-                onChange={(e) => setForm({ ...form, coverUrl: e.target.value })}
-                placeholder="URL gambar atau klik Upload"
-                className="input-base flex-1"
-              />
-              <input ref={coverFileRef} type="file" accept="image/*" onChange={handleCoverFile} hidden />
-              <button
-                type="button"
-                onClick={() => coverFileRef.current?.click()}
-                disabled={coverUploading}
-                className="btn-secondary disabled:opacity-50"
-              >
-                {coverUploading ? "Upload…" : "Upload"}
-              </button>
-            </div>
-          </div>
-          <label className="block">
-            <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Deskripsi</span>
-            <textarea rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="input-base" />
-          </label>
-          <div className="flex justify-end gap-2 pt-1">
-            <button type="button" onClick={() => setOpen(false)} className="btn-secondary">Batal</button>
-            <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-50">{submitting ? "Menyimpan…" : form.id ? "Simpan" : "Buat"}</button>
-          </div>
-        </form>
-      </Modal>
 
       <Modal open={!!viewing} onClose={() => setViewing(null)} title={viewing?.title || ""} size="lg">
         {viewing && (
@@ -332,7 +226,7 @@ export default function GaleriPage() {
                     <img src={it.photo_url} alt={it.caption ?? ""} className="aspect-square w-full object-cover" />
                     {it.caption && <div className="p-2 text-xs text-slate-600 dark:text-slate-300 dark:bg-slate-800">{it.caption}</div>}
                     <button
-                      onClick={() => handleRemovePhoto(it.id)}
+                      onClick={() => setPhotoDeleteTarget(it.id)}
                       className="absolute top-1 right-1 px-2 py-0.5 rounded-md text-xs bg-rose-600 text-white opacity-0 group-hover:opacity-100 transition"
                     >×</button>
                   </div>
@@ -342,6 +236,22 @@ export default function GaleriPage() {
           </div>
         )}
       </Modal>
+      <ConfirmDialog
+        open={!!deleteTarget}
+        title="Hapus album galeri?"
+        message={`Album "${deleteTarget?.title || "ini"}" beserta semua fotonya akan dihapus permanen dan tidak bisa dikembalikan.`}
+        confirmLabel="Hapus Album"
+        onClose={() => setDeleteTarget(null)}
+        onConfirm={() => deleteTarget ? handleDelete(deleteTarget) : undefined}
+      />
+      <ConfirmDialog
+        open={photoDeleteTarget !== null}
+        title="Hapus foto?"
+        message="Foto ini akan dihapus permanen dari album dan tidak bisa dikembalikan."
+        confirmLabel="Hapus Foto"
+        onClose={() => setPhotoDeleteTarget(null)}
+        onConfirm={() => photoDeleteTarget !== null ? handleRemovePhoto(photoDeleteTarget) : undefined}
+      />
     </AppLayout>
   )
 }

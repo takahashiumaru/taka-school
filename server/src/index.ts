@@ -19,6 +19,16 @@ import galleriesRoutes from "./routes/galleries.js"
 import reportsRoutes from "./routes/reports.js"
 import uploadsRoutes from "./routes/uploads.js"
 import academicRoutes from "./routes/academic.js"
+import tasksRoutes from "./routes/tasks.js"
+import assessmentsRoutes from "./routes/assessments.js"
+import financeRoutes from "./routes/finance.js"
+import portalRoutes from "./routes/portal.js"
+import operationsRoutes from "./routes/operations.js"
+import admissionsRoutes from "./routes/admissions.js"
+import userLinksRoutes from "./routes/userLinks.js"
+import importExportRoutes from "./routes/importExport.js"
+import aiRoutes from "./routes/ai.js"
+import saasRoutes from "./routes/saas.js"
 import { ensureDemoData } from "./scripts/seed.js"
 
 const __filename = fileURLToPath(import.meta.url)
@@ -26,10 +36,15 @@ const __dirname = path.dirname(__filename)
 
 const app = express()
 
-const origins = (process.env.CORS_ORIGIN || "*")
+const defaultCorsOrigin = process.env.NODE_ENV === "production" ? "" : "*"
+const origins = (process.env.CORS_ORIGIN || defaultCorsOrigin)
   .split(",")
   .map((s) => s.trim())
   .filter(Boolean)
+
+if (process.env.NODE_ENV === "production" && origins.includes("*")) {
+  throw new Error("CORS_ORIGIN tidak boleh wildcard (*) di production.")
+}
 app.use(
   cors({
     origin: (origin, cb) => {
@@ -40,6 +55,13 @@ app.use(
     allowedHeaders: ["Content-Type", "Authorization", "X-Auth-Token"],
   }),
 )
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff")
+  res.setHeader("X-Frame-Options", "DENY")
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin")
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+  next()
+})
 app.use(express.json({ limit: "1mb" }))
 
 app.get("/api/health", async (_req, res) => {
@@ -64,9 +86,27 @@ app.use("/api/galleries", galleriesRoutes)
 app.use("/api/reports", reportsRoutes)
 app.use("/api/uploads", uploadsRoutes)
 app.use("/api/academic", academicRoutes)
+app.use("/api/tasks", tasksRoutes)
+app.use("/api/assessments", assessmentsRoutes)
+app.use("/api/finance", financeRoutes)
+app.use("/api/portal", portalRoutes)
+app.use("/api/operations", operationsRoutes)
+app.use("/api/admissions", admissionsRoutes)
+app.use("/api/user-links", userLinksRoutes)
+app.use("/api/import-export", importExportRoutes)
+app.use("/api/ai", aiRoutes)
+app.use("/api/saas", saasRoutes)
 
 const uploadsDir = path.resolve(process.cwd(), "uploads")
-app.use("/uploads", express.static(uploadsDir))
+app.use(
+  "/uploads",
+  express.static(uploadsDir, {
+    setHeaders: (res) => {
+      res.setHeader("X-Content-Type-Options", "nosniff")
+      res.setHeader("Content-Disposition", "inline")
+    },
+  }),
+)
 
 const webDist = path.resolve(__dirname, "..", "..", "web", "dist")
 if (existsSync(webDist)) {

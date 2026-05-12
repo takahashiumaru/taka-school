@@ -3,10 +3,10 @@ import multer from "multer"
 import path from "node:path"
 import fs from "node:fs"
 import crypto from "node:crypto"
-import { requireAuth } from "../auth.js"
+import { requireOffice } from "../auth.js"
 
 const router = Router()
-router.use(requireAuth())
+router.use(requireOffice())
 
 const UPLOAD_ROOT = path.resolve(process.cwd(), "uploads")
 fs.mkdirSync(UPLOAD_ROOT, { recursive: true })
@@ -21,20 +21,23 @@ const storage = multer.diskStorage({
   },
 })
 
-const ALLOWED = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-  "image/gif",
-  "image/svg+xml",
-])
+const EXT_BY_MIME: Record<string, string[]> = {
+  "image/jpeg": [".jpg", ".jpeg"],
+  "image/png": [".png"],
+  "image/webp": [".webp"],
+  "image/gif": [".gif"],
+}
+
+const ALLOWED = new Set(Object.keys(EXT_BY_MIME))
 
 const upload = multer({
   storage,
   limits: { fileSize: 8 * 1024 * 1024 },
   fileFilter: (_req, file, cb) => {
-    if (ALLOWED.has(file.mimetype)) cb(null, true)
-    else cb(new Error("Tipe file tidak didukung"))
+    const ext = path.extname(file.originalname || "").toLowerCase()
+    const validExt = EXT_BY_MIME[file.mimetype]?.includes(ext)
+    if (ALLOWED.has(file.mimetype) && validExt) cb(null, true)
+    else cb(new Error("Tipe atau ekstensi file tidak didukung"))
   },
 })
 

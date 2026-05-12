@@ -2,19 +2,26 @@ import { useState } from "react"
 import { Link, NavLink, useLocation, useNavigate } from "react-router-dom"
 import Logo from "./Logo"
 import { clearAuth, getUser } from "../lib/api"
+import { can, roleLabels } from "../lib/permissions"
 import { ThemeToggle } from "./ThemeProvider"
 
-const NAV: { to: string; label: string; shortLabel?: string; icon: string; mobile?: boolean }[] = [
+const NAV: { to: string; label: string; shortLabel?: string; icon: string; mobile?: boolean; show?: (role: NonNullable<ReturnType<typeof getUser>>["role"]) => boolean }[] = [
   { to: "/dashboard", label: "Dashboard", icon: "M3 12l9-9 9 9M5 10v10h14V10", mobile: true },
-  { to: "/siswa", label: "Data Siswa", shortLabel: "Siswa", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z", mobile: true },
-  { to: "/guru", label: "Data Guru", icon: "M5 13l4 4L19 7" },
-  { to: "/kelas", label: "Kelas", icon: "M3 7l9-4 9 4-9 4-9-4z M3 12l9 4 9-4" },
-  { to: "/absensi", label: "Absensi", icon: "M9 12l2 2 4-4M5 5h14v14H5z", mobile: true },
-  { to: "/jadwal", label: "Jadwal", icon: "M8 7V3m8 4V3M3 11h18M5 7h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z" },
-  { to: "/spp", label: "SPP", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v2", mobile: true },
+  { to: "/portal", label: "Portal", icon: "M4 6h16M4 12h16M4 18h7", mobile: true, show: (r) => ["teacher", "guru", "parent", "student"].includes(r) },
+  { to: "/siswa", label: "Data Siswa", shortLabel: "Siswa", icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14c-4.418 0-8 2.239-8 5v1h16v-1c0-2.761-3.582-5-8-5z", mobile: true, show: can.readSchoolData },
+  { to: "/guru", label: "Data Guru", icon: "M5 13l4 4L19 7", show: can.readSchoolData },
+  { to: "/kelas", label: "Kelas", icon: "M3 7l9-4 9 4-9 4-9-4z M3 12l9 4 9-4", show: can.readSchoolData },
+  { to: "/absensi", label: "Absensi", icon: "M9 12l2 2 4-4M5 5h14v14H5z", mobile: true, show: (r) => ["admin", "staff", "teacher", "guru"].includes(r) },
+  { to: "/jadwal", label: "Jadwal", icon: "M8 7V3m8 4V3M3 11h18M5 7h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z", show: can.readSchoolData },
+  { to: "/spp", label: "SPP", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8V6m0 12v2", mobile: true, show: can.readSchoolData },
   { to: "/pengumuman", label: "Pengumuman", icon: "M11 5L6 9H2v6h4l5 4V5z M15.5 8a4 4 0 010 8" },
   { to: "/galeri", label: "Galeri", icon: "M4 16l4-4 4 4 8-8M4 6h16v12H4z" },
   { to: "/rapor", label: "Rapor", icon: "M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h7l5 5v11a2 2 0 01-2 2z" },
+  { to: "/operasional", label: "Operasional", icon: "M4 21V7l8-4 8 4v14M9 21v-6h6v6", show: (r) => ["admin", "staff", "teacher", "guru", "headmaster"].includes(r) },
+  { to: "/akademik", label: "Akademik", icon: "M12 6v12M6 12h12M4 4h16v16H4z", show: can.manageAdminData },
+  { to: "/admissions", label: "PPDB", icon: "M9 12h6m-6 4h6M7 4h10l2 4v12H5V8l2-4z", show: (r) => ["admin", "staff"].includes(r) },
+  { to: "/import-export", label: "Import/Export", icon: "M4 7h16M4 12h16M4 17h16M8 3v18m8-18v18", show: (r) => ["admin", "staff"].includes(r) },
+  { to: "/ai-saas", label: "AI & SaaS", icon: "M12 3l2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3z", show: (r) => ["admin", "staff", "headmaster"].includes(r) },
 ]
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -25,7 +32,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (!user) return null
 
-  const visible = NAV
+  const visible = NAV.filter((n) => !n.show || n.show(user.role))
 
   function handleLogout() {
     clearAuth()
@@ -95,7 +102,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <div className="hidden sm:flex flex-col items-end leading-tight">
                 <div className="text-sm font-semibold text-slate-900 dark:text-slate-100">{user.name}</div>
                 <div className="text-xs text-slate-500 dark:text-slate-400">
-                  {user.role === "admin" ? "Admin" : "Guru"} · {user.schoolName}
+                  {roleLabels[user.role] || user.role} · {user.schoolName}
                 </div>
               </div>
               <div className="h-9 w-9 rounded-full bg-primary-100 text-primary-700 dark:bg-primary-500/20 dark:text-primary-200 flex items-center justify-center font-bold">
@@ -118,6 +125,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
 function currentTitle(path: string): string {
   if (path.startsWith("/dashboard")) return "Dashboard"
+  if (path.startsWith("/portal")) return "Portal"
   if (path.startsWith("/siswa")) return "Data Siswa"
   if (path.startsWith("/guru")) return "Data Guru"
   if (path.startsWith("/kelas")) return "Kelas"
@@ -127,5 +135,9 @@ function currentTitle(path: string): string {
   if (path.startsWith("/pengumuman")) return "Pengumuman"
   if (path.startsWith("/galeri")) return "Galeri"
   if (path.startsWith("/rapor")) return "Rapor"
+  if (path.startsWith("/akademik")) return "Pengaturan Akademik"
+  if (path.startsWith("/admissions") || path.startsWith("/ppdb/admin")) return "PPDB"
+  if (path.startsWith("/import-export")) return "Import/Export"
+  if (path.startsWith("/ai-saas")) return "AI & SaaS Foundation"
   return ""
 }

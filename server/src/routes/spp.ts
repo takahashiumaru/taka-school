@@ -2,11 +2,11 @@ import { Router } from "express"
 import { z } from "zod"
 import type { RowDataPacket, ResultSetHeader } from "mysql2"
 import { pool } from "../db.js"
-import { requireAuth } from "../auth.js"
+import { requireOffice, requireSchoolRead } from "../auth.js"
 
 const router = Router()
 
-router.use(requireAuth())
+router.use(requireSchoolRead())
 
 const createSchema = z.object({
   studentId: z.number().int().positive(),
@@ -52,7 +52,7 @@ router.get("/", async (req, res) => {
   res.json({ items: rows })
 })
 
-router.post("/", requireAuth(), async (req, res) => {
+router.post("/", requireOffice(), async (req, res) => {
   const schoolId = req.user!.schoolId
   const parsed = createSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: "Invalid", details: parsed.error.issues })
@@ -71,7 +71,7 @@ router.post("/", requireAuth(), async (req, res) => {
   }
 })
 
-router.post("/batch", requireAuth(), async (req, res) => {
+router.post("/batch", requireOffice(), async (req, res) => {
   const schoolId = req.user!.schoolId
   const parsed = batchSchema.safeParse(req.body)
   if (!parsed.success) return res.status(400).json({ error: "Invalid", details: parsed.error.issues })
@@ -101,7 +101,7 @@ router.post("/batch", requireAuth(), async (req, res) => {
   res.json({ ok: true, created, total: students.length })
 })
 
-router.put("/:id/pay", requireAuth(), async (req, res) => {
+router.put("/:id/pay", requireOffice(), async (req, res) => {
   const schoolId = req.user!.schoolId
   const id = Number(req.params.id)
   const parsed = paySchema.safeParse(req.body)
@@ -122,7 +122,7 @@ router.put("/:id/pay", requireAuth(), async (req, res) => {
   res.json({ ok: true, status })
 })
 
-router.delete("/:id", requireAuth(), async (req, res) => {
+router.delete("/:id", requireOffice(), async (req, res) => {
   const schoolId = req.user!.schoolId
   const id = Number(req.params.id)
   await pool.query(

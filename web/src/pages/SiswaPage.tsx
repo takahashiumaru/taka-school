@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
+import { Link } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
-import Modal from "../components/Modal"
 import Select from "../components/Select"
 import ConfirmDialog from "../components/ConfirmDialog"
 import { AlertBox, EmptyState, TableSkeleton } from "../components/UiState"
@@ -13,31 +13,6 @@ import {
   type Student,
 } from "../lib/api"
 
-type FormState = {
-  id?: number
-  name: string
-  nis: string
-  classId: number | null
-  gender: "L" | "P" | ""
-  birthDate: string
-  parentName: string
-  parentWa: string
-  address: string
-  status: "aktif" | "lulus" | "keluar"
-}
-
-const emptyForm: FormState = {
-  name: "",
-  nis: "",
-  classId: null,
-  gender: "",
-  birthDate: "",
-  parentName: "",
-  parentWa: "",
-  address: "",
-  status: "aktif",
-}
-
 export default function SiswaPage() {
   const user = getUser()
   const [items, setItems] = useState<Student[]>([])
@@ -47,9 +22,6 @@ export default function SiswaPage() {
   const [filterStatus, setFilterStatus] = useState<string>("aktif")
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [form, setForm] = useState<FormState>(emptyForm)
-  const [submitting, setSubmitting] = useState(false)
   const [deleteTarget, setDeleteTarget] = useState<Student | null>(null)
   const [deleting, setDeleting] = useState(false)
 
@@ -77,54 +49,6 @@ export default function SiswaPage() {
   useEffect(() => {
     refresh()
   }, [filterClass, filterStatus])
-
-  function openNew() {
-    setForm(emptyForm)
-    setModalOpen(true)
-  }
-
-  function openEdit(s: Student) {
-    setForm({
-      id: s.id,
-      name: s.name,
-      nis: s.nis ?? "",
-      classId: s.class_id,
-      gender: s.gender ?? "",
-      birthDate: s.birth_date ? s.birth_date.slice(0, 10) : "",
-      parentName: s.parent_name ?? "",
-      parentWa: s.parent_wa ?? "",
-      address: s.address ?? "",
-      status: s.status,
-    })
-    setModalOpen(true)
-  }
-
-  async function handleSave(e: React.FormEvent) {
-    e.preventDefault()
-    setSubmitting(true)
-    setError(null)
-    try {
-      const payload = {
-        name: form.name,
-        nis: form.nis || null,
-        classId: form.classId,
-        gender: form.gender || null,
-        birthDate: form.birthDate || null,
-        parentName: form.parentName || null,
-        parentWa: form.parentWa || null,
-        address: form.address || null,
-        status: form.status,
-      }
-      if (form.id) await Students.update(form.id, payload)
-      else await Students.create(payload)
-      setModalOpen(false)
-      refresh()
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Gagal menyimpan")
-    } finally {
-      setSubmitting(false)
-    }
-  }
 
   async function confirmDelete() {
     if (!deleteTarget) return
@@ -160,7 +84,7 @@ export default function SiswaPage() {
           <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Data Siswa</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{filtered.length} siswa ditampilkan</p>
         </div>
-        <button onClick={openNew} className="btn-primary">+ Tambah Siswa</button>
+        <Link to="/siswa/baru" className="btn-primary">+ Tambah Siswa</Link>
       </div>
 
       <div className="mt-5 grid sm:grid-cols-3 gap-3">
@@ -189,7 +113,49 @@ export default function SiswaPage() {
 
       {error && <div className="mt-4"><AlertBox>{error}</AlertBox></div>}
 
-      <div className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden dark:bg-slate-900 dark:ring-slate-800">
+      <div className="mt-5 grid gap-3 md:hidden">
+        {loading && <TableSkeleton rows={4} cols={2} />}
+        {!loading && filtered.length === 0 && (
+          <div className="rounded-2xl bg-white ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
+            <EmptyState title="Belum ada data siswa" desc="Tambahkan siswa pertama atau ubah filter pencarian." action={<Link to="/siswa/baru" className="btn-primary-sm">+ Tambah Siswa</Link>} />
+          </div>
+        )}
+        {filtered.map((s) => (
+          <div key={s.id} className="rounded-2xl bg-white ring-1 ring-slate-200 p-4 dark:bg-slate-900 dark:ring-slate-800">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="font-bold text-slate-900 dark:text-slate-100">{s.name}</div>
+                <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">{s.nickname ? `${s.nickname} · ` : ""}{s.nis || "NIS —"}{s.nisn ? ` · NISN ${s.nisn}` : ""}</div>
+              </div>
+              <StatusBadge status={s.status} />
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-2 text-xs text-slate-600 dark:text-slate-400">
+              <Info label="Kelas" value={s.class_name || "—"} />
+              <Info label="L/P" value={s.gender || "—"} />
+              <Info label="Wali" value={s.parent_name || "—"} />
+              <Info label="WA" value={s.parent_wa || "—"} />
+              <Info label="Darah" value={s.blood_type || "—"} />
+              <Info label="Darurat" value={s.emergency_contact_phone || "—"} />
+            </div>
+            {(s.allergies || s.medical_notes) && (
+              <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-500/10 dark:text-amber-200">
+                {s.allergies && <div><b>Alergi:</b> {s.allergies}</div>}
+                {s.medical_notes && <div><b>Medis:</b> {s.medical_notes}</div>}
+              </div>
+            )}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {s.parent_wa && (
+                <a href={waLink(s.parent_wa, `Halo ${s.parent_name || "Bapak/Ibu"}, mohon waktunya untuk informasi terkait ananda ${s.name} di sekolah.`) || "#"} target="_blank" rel="noreferrer" className="btn-secondary-sm text-emerald-700 dark:text-emerald-300">WA</a>
+              )}
+              <Link to={`/siswa/${s.id}`} className="btn-secondary-sm">Detail</Link>
+              <Link to={`/siswa/${s.id}/edit`} className="btn-secondary-sm">Edit</Link>
+              <button onClick={() => setDeleteTarget(s)} className="btn-danger-sm">Hapus</button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="mt-5 hidden rounded-2xl bg-white ring-1 ring-slate-200 overflow-hidden dark:bg-slate-900 dark:ring-slate-800 md:block">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-slate-50 text-left text-slate-600 dark:bg-slate-800/60 dark:text-slate-300">
@@ -208,7 +174,7 @@ export default function SiswaPage() {
               {!loading && filtered.length === 0 && (
                 <tr>
                   <td colSpan={7}>
-                    <EmptyState title="Belum ada data siswa" desc="Tambahkan siswa pertama atau ubah filter pencarian." action={<button onClick={openNew} className="btn-primary-sm">+ Tambah Siswa</button>} />
+                    <EmptyState title="Belum ada data siswa" desc="Tambahkan siswa pertama atau ubah filter pencarian." action={<Link to="/siswa/baru" className="btn-primary-sm">+ Tambah Siswa</Link>} />
                   </td>
                 </tr>
               )}
@@ -241,7 +207,8 @@ export default function SiswaPage() {
                         WA
                       </a>
                     )}
-                    <button onClick={() => openEdit(s)} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10 mr-1">Edit</button>
+                    <Link to={`/siswa/${s.id}`} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10 mr-1">Detail</Link>
+                    <Link to={`/siswa/${s.id}/edit`} className="text-xs font-semibold px-2 py-1 rounded-lg text-primary-700 hover:bg-primary-50 dark:text-primary-300 dark:hover:bg-primary-500/10 mr-1">Edit</Link>
                     <button onClick={() => setDeleteTarget(s)} className="text-xs font-semibold px-2 py-1 rounded-lg text-rose-600 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10">Hapus</button>
                   </td>
                 </tr>
@@ -250,64 +217,6 @@ export default function SiswaPage() {
           </table>
         </div>
       </div>
-
-      <Modal open={modalOpen} onClose={() => setModalOpen(false)} title={form.id ? "Edit Siswa" : "Tambah Siswa"} size="lg">
-        <form onSubmit={handleSave} className="grid sm:grid-cols-2 gap-3">
-          <Field label="Nama Lengkap *" full>
-            <input required value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="input-base" />
-          </Field>
-          <Field label="NIS">
-            <input value={form.nis} onChange={(e) => setForm({ ...form, nis: e.target.value })} className="input-base" />
-          </Field>
-          <Field label="Kelas">
-            <Select
-              value={form.classId ? String(form.classId) : ""}
-              onChange={(v) => setForm({ ...form, classId: v ? Number(v) : null })}
-              options={[{ value: "", label: "— Belum berkelas —" }, ...classes.map((c) => ({ value: String(c.id), label: c.name }))]}
-            />
-          </Field>
-          <Field label="Jenis Kelamin">
-            <Select
-              value={form.gender}
-              onChange={(v) => setForm({ ...form, gender: v as "L" | "P" | "" })}
-              options={[
-                { value: "", label: "—" },
-                { value: "L", label: "Laki-laki" },
-                { value: "P", label: "Perempuan" },
-              ]}
-            />
-          </Field>
-          <Field label="Tanggal Lahir">
-            <input type="date" value={form.birthDate} onChange={(e) => setForm({ ...form, birthDate: e.target.value })} className="input-base" />
-          </Field>
-          <Field label="Status">
-            <Select
-              value={form.status}
-              onChange={(v) => setForm({ ...form, status: v as "aktif" | "lulus" | "keluar" })}
-              options={[
-                { value: "aktif", label: "Aktif" },
-                { value: "lulus", label: "Lulus" },
-                { value: "keluar", label: "Keluar" },
-              ]}
-            />
-          </Field>
-          <Field label="Nama Wali Murid">
-            <input value={form.parentName} onChange={(e) => setForm({ ...form, parentName: e.target.value })} className="input-base" />
-          </Field>
-          <Field label="No. WhatsApp Wali">
-            <input value={form.parentWa} onChange={(e) => setForm({ ...form, parentWa: e.target.value })} placeholder="08xxxxxxxxxx" className="input-base" />
-          </Field>
-          <Field label="Alamat" full>
-            <textarea value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} rows={2} className="input-base" />
-          </Field>
-          <div className="sm:col-span-2 flex justify-end gap-2 pt-2">
-            <button type="button" onClick={() => setModalOpen(false)} className="btn-secondary">Batal</button>
-            <button type="submit" disabled={submitting} className="btn-primary disabled:opacity-50">
-              {submitting ? "Menyimpan…" : form.id ? "Simpan" : "Tambah"}
-            </button>
-          </div>
-        </form>
-      </Modal>
 
       <ConfirmDialog
         open={!!deleteTarget}
@@ -322,20 +231,11 @@ export default function SiswaPage() {
   )
 }
 
-function Field({ label, full, children }: { label: string; full?: boolean; children: React.ReactNode }) {
-  return (
-    <div className={`block ${full ? "sm:col-span-2" : ""}`}>
-      <span className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">{label}</span>
-      {children}
-    </div>
-  )
+function StatusBadge({ status }: { status: string }) {
+  const cls = status === "aktif" ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300" : status === "lulus" ? "bg-sky-50 text-sky-700 dark:bg-sky-500/15 dark:text-sky-300" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+  return <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${cls}`}>{status}</span>
 }
 
-function StatusBadge({ status }: { status: "aktif" | "lulus" | "keluar" }) {
-  const colors = {
-    aktif: "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-300",
-    lulus: "bg-sky-50 text-sky-700 dark:bg-sky-500/10 dark:text-sky-300",
-    keluar: "bg-slate-100 text-slate-600 dark:bg-slate-700/40 dark:text-slate-300",
-  }
-  return <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${colors[status]}`}>{status}</span>
+function Info({ label, value }: { label: string; value: React.ReactNode }) {
+  return <div><div className="text-[10px] uppercase tracking-wide text-slate-400 dark:text-slate-500">{label}</div><div className="font-medium text-slate-700 dark:text-slate-300">{value}</div></div>
 }

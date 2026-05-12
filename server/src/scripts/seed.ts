@@ -1,365 +1,248 @@
-import bcrypt from "bcryptjs"
+import { createRequire } from "node:module"
+import { pathToFileURL } from "node:url"
 import type { RowDataPacket, ResultSetHeader } from "mysql2"
 import { pool } from "../db.js"
+import { ensureSchema } from "../schema.js"
 
-async function findOrCreateSchool(name: string, slug: string): Promise<number> {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM schools WHERE slug = ? LIMIT 1",
-    [slug],
-  )
-  if (rows.length > 0) return rows[0].id
-  const [res] = await pool.query<ResultSetHeader>(
-    "INSERT INTO schools (name, slug) VALUES (?, ?)",
-    [name, slug],
-  )
+const require = createRequire(import.meta.url)
+const bcrypt = require("bcryptjs") as { hash: (password: string, rounds: number) => Promise<string> }
+
+type Gender = "L" | "P"
+type AttendanceStatus = "hadir" | "izin" | "sakit" | "alpa"
+
+const maleFirst = ["Ahmad", "Rizky", "Bima", "Fajar", "Dimas", "Rafi", "Arkan", "Naufal", "Farhan", "Ilham", "Bagas", "Aditya", "Raka", "Iqbal", "Yusuf", "Fikri", "Galang", "Hafiz", "Reza", "Tegar", "Alif", "Daffa", "Rangga", "Rendy", "Wildan", "Rivaldi", "Syauqi", "Raihan", "Fadli", "Gilang"]
+const femaleFirst = ["Siti", "Aisyah", "Nadia", "Putri", "Dewi", "Anisa", "Zahra", "Fitri", "Citra", "Amelia", "Nabila", "Intan", "Rania", "Salma", "Kayla", "Aulia", "Hana", "Riska", "Tiara", "Maya", "Laras", "Nayla", "Salsa", "Niken", "Sekar", "Adinda", "Mutiara", "Kirana", "Aqila", "Fathia"]
+const lastNames = ["Pratama", "Saputra", "Wijaya", "Nugroho", "Kurniawan", "Rahmawati", "Permata", "Salsabila", "Ramadhan", "Maulana", "Utami", "Lestari", "Hidayat", "Santoso", "Wibowo", "Ananda", "Pangestu", "Setiawan", "Pertiwi", "Cahyani", "Mahendra", "Firmansyah", "Fauziah", "Aprilia", "Maharani", "Anggraini", "Gunawan", "Natasya", "Herlambang", "Oktaviani"]
+const fatherNames = ["Budi Santoso", "Agus Setiawan", "Hendra Wijaya", "Joko Prasetyo", "Rudi Hartono", "Eko Purnomo", "Wahyu Saputra", "Dedi Kurniawan", "Herman Susanto", "Taufik Hidayat"]
+const motherNames = ["Sri Wahyuni", "Sulastri", "Nur Aini", "Dewi Lestari", "Rina Marlina", "Yanti Kurniasih", "Fitri Handayani", "Maya Sari", "Ratna Wulandari", "Lilis Suryani"]
+const streets = ["Jl. Merdeka", "Jl. Sudirman", "Jl. Diponegoro", "Jl. Ahmad Yani", "Jl. Melati", "Jl. Kenanga", "Jl. Cendana", "Jl. Pahlawan", "Jl. Gatot Subroto", "Jl. Imam Bonjol"]
+const religions = ["Islam", "Kristen", "Katolik", "Hindu", "Buddha"]
+const bloodTypes = ["A", "B", "AB", "O"]
+
+const subjects = [
+  ["MTK", "Matematika Wajib"], ["BIN", "Bahasa Indonesia"], ["BIG", "Bahasa Inggris"], ["PAI", "Pendidikan Agama"],
+  ["PPKN", "PPKn"], ["SEJ", "Sejarah Indonesia"], ["FIS", "Fisika"], ["KIM", "Kimia"], ["BIO", "Biologi"],
+  ["EKO", "Ekonomi"], ["SOS", "Sosiologi"], ["GEO", "Geografi"], ["SAS", "Sastra Indonesia"], ["JPG", "Bahasa Jepang"],
+  ["SEN", "Seni Budaya"], ["PJOK", "PJOK"]
+]
+const subjectByMajor: Record<string, string[]> = {
+  IPA: ["MTK", "BIN", "BIG", "PAI", "PPKN", "SEJ", "FIS", "KIM", "BIO", "SEN", "PJOK"],
+  IPS: ["MTK", "BIN", "BIG", "PAI", "PPKN", "SEJ", "EKO", "SOS", "GEO", "SEN", "PJOK"],
+  Bahasa: ["MTK", "BIN", "BIG", "PAI", "PPKN", "SEJ", "SAS", "JPG", "SEN", "PJOK", "SOS"],
+}
+
+function pick<T>(arr: T[], i: number) { return arr[i % arr.length] }
+function phone(i: number) { return `08${String(1200000000 + i * 7919).slice(0, 10)}` }
+function dateAdd(base: Date, days: number) { const d = new Date(base); d.setDate(d.getDate() + days); return d.toISOString().slice(0, 10) }
+function slug(s: string) { return s.toLowerCase().replace(/[^a-z0-9]+/g, ".").replace(/^\.|\.$/g, "") }
+
+async function getOne(sql: string, params: unknown[]) {
+  const [rows] = await pool.query<RowDataPacket[]>(sql, params)
+  return rows[0]
+}
+async function insert(sql: string, params: unknown[]) {
+  const [res] = await pool.query<ResultSetHeader>(sql, params)
   return res.insertId
 }
 
-async function findOrCreateUser(
-  schoolId: number,
-  name: string,
-  email: string,
-  password: string,
-  role: "admin" | "guru",
-): Promise<number> {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM users WHERE email = ? LIMIT 1",
-    [email],
-  )
-  if (rows.length > 0) return rows[0].id
-  const hash = await bcrypt.hash(password, 10)
-  const [res] = await pool.query<ResultSetHeader>(
-    "INSERT INTO users (school_id, name, email, password_hash, role) VALUES (?, ?, ?, ?, ?)",
-    [schoolId, name, email, hash, role],
-  )
-  return res.insertId
-}
-
-async function ensureAcademicFoundation(schoolId: number) {
-  const levels: Array<[string, string, number]> = [["paud", "PAUD", 1], ["tk", "TK", 2], ["sd", "SD", 3], ["smp", "SMP", 4], ["sma", "SMA", 5]]
-  const levelIds: Record<string, number> = {}
-  for (const [code, name, sort] of levels) {
-    await pool.query("INSERT IGNORE INTO education_levels (school_id, code, name, sort_order) VALUES (?, ?, ?, ?)", [schoolId, code, name, sort])
-    const [rows] = await pool.query<RowDataPacket[]>("SELECT id FROM education_levels WHERE school_id=? AND code=? LIMIT 1", [schoolId, code])
-    levelIds[code] = rows[0].id
+async function ensureCurrentOperationalData(schoolId: number) {
+  const [studentRows] = await pool.query<RowDataPacket[]>("SELECT id, class_id FROM students WHERE school_id=? AND status='aktif'", [schoolId])
+  const admin = await getOne("SELECT id FROM users WHERE school_id=? AND role='admin' LIMIT 1", [schoolId])
+  const adminId = Number(admin?.id ?? 1)
+  const today = new Date()
+  const currentPeriod = today.toISOString().slice(0, 7)
+  for (let d = 0; d < 14; d += 1) {
+    const date = dateAdd(today, -d)
+    const day = new Date(date).getDay()
+    if (day === 0 || day === 6) continue
+    for (let i = 0; i < studentRows.length; i += 1) {
+      const s = studentRows[i]
+      const r = (i * 11 + d * 5) % 100
+      const status: AttendanceStatus = r < 89 ? "hadir" : r < 94 ? "izin" : r < 98 ? "sakit" : "alpa"
+      await pool.query("INSERT IGNORE INTO attendance (school_id, class_id, student_id, date, status, recorded_by) VALUES (?, ?, ?, ?, ?, ?)", [schoolId, s.class_id, s.id, date, status, adminId])
+    }
   }
-  const gradeDefs: Array<[string, string, string, number]> = [
-    ["paud", "paud-a", "PAUD A", 1], ["paud", "paud-b", "PAUD B", 2],
-    ["tk", "tk-a", "TK A", 1], ["tk", "tk-b", "TK B", 2],
-    ...[1,2,3,4,5,6].map((n) => ["sd", String(n), `Kelas ${n}`, n] as [string,string,string,number]),
-    ...[7,8,9].map((n) => ["smp", String(n), `Kelas ${n}`, n] as [string,string,string,number]),
-    ...[10,11,12].map((n) => ["sma", String(n), `Kelas ${n}`, n] as [string,string,string,number]),
-  ]
-  for (const [level, code, name, sort] of gradeDefs) {
-    await pool.query("INSERT IGNORE INTO grade_levels (school_id, education_level_id, code, name, sort_order) VALUES (?, ?, ?, ?, ?)", [schoolId, levelIds[level], code, name, sort])
+  for (let i = 0; i < studentRows.length; i += 1) {
+    const s = studentRows[i]
+    const status = i % 9 === 0 ? "belum" : i % 13 === 0 ? "sebagian" : "lunas"
+    const amount = 550000
+    const paid = status === "lunas" ? amount : status === "sebagian" ? 300000 : 0
+    await pool.query("INSERT IGNORE INTO spp_invoices (school_id, student_id, period, amount, due_date, status, paid_amount, paid_at, method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [schoolId, s.id, currentPeriod, amount, `${currentPeriod}-10`, status, paid, paid > 0 ? `${currentPeriod}-08 09:00:00` : null, paid > 0 ? "transfer" : null])
   }
-  const now = new Date()
-  const y = now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1
-  const yearName = `${y}/${y + 1}`
-  await pool.query("INSERT IGNORE INTO academic_years (school_id, name, start_date, end_date, is_active) VALUES (?, ?, ?, ?, 1)", [schoolId, yearName, `${y}-07-01`, `${y+1}-06-30`])
-  const [yearRows] = await pool.query<RowDataPacket[]>("SELECT id FROM academic_years WHERE school_id=? AND name=? LIMIT 1", [schoolId, yearName])
-  const yearId = yearRows[0].id
-  await pool.query("INSERT IGNORE INTO semesters (school_id, academic_year_id, name, sort_order, start_date, end_date, is_active) VALUES (?, ?, 'Ganjil', 1, ?, ?, 1)", [schoolId, yearId, `${y}-07-01`, `${y}-12-31`])
-  await pool.query("INSERT IGNORE INTO semesters (school_id, academic_year_id, name, sort_order, start_date, end_date, is_active) VALUES (?, ?, 'Genap', 2, ?, ?, 0)", [schoolId, yearId, `${y+1}-01-01`, `${y+1}-06-30`])
-  for (const major of ["IPA", "IPS", "Bahasa"]) {
-    await pool.query("INSERT IGNORE INTO majors (school_id, education_level_id, name) VALUES (?, ?, ?)", [schoolId, levelIds.sma, major])
-  }
-  return { levelIds, yearId }
-}
-
-async function findOrCreateClass(
-  schoolId: number,
-  name: string,
-  level: string,
-  homeroomId: number | null,
-): Promise<number> {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM classes WHERE school_id = ? AND name = ? LIMIT 1",
-    [schoolId, name],
-  )
-  if (rows.length > 0) return rows[0].id
-  const [res] = await pool.query<ResultSetHeader>(
-    "INSERT INTO classes (school_id, name, grade_level, homeroom_teacher_id) VALUES (?, ?, ?, ?)",
-    [schoolId, name, level, homeroomId],
-  )
-  return res.insertId
-}
-
-async function ensureStudent(
-  schoolId: number,
-  classId: number,
-  nis: string,
-  name: string,
-  gender: "L" | "P",
-  parent: string,
-  parentWa: string,
-) {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM students WHERE school_id = ? AND nis = ? LIMIT 1",
-    [schoolId, nis],
-  )
-  if (rows.length > 0) return rows[0].id
-  const [res] = await pool.query<ResultSetHeader>(
-    "INSERT INTO students (school_id, class_id, nis, name, gender, parent_name, parent_wa) VALUES (?, ?, ?, ?, ?, ?, ?)",
-    [schoolId, classId, nis, name, gender, parent, parentWa],
-  )
-  return res.insertId
-}
-
-async function ensureAttendance(
-  schoolId: number,
-  classId: number,
-  studentId: number,
-  date: string,
-  status: "hadir" | "izin" | "sakit" | "alpa",
-) {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM attendance WHERE student_id = ? AND date = ? LIMIT 1",
-    [studentId, date],
-  )
-  if (rows.length > 0) return rows[0].id
-  const [res] = await pool.query<ResultSetHeader>(
-    "INSERT INTO attendance (school_id, class_id, student_id, date, status) VALUES (?, ?, ?, ?, ?)",
-    [schoolId, classId, studentId, date, status],
-  )
-  return res.insertId
-}
-
-async function ensureSppInvoice(
-  schoolId: number,
-  studentId: number,
-  period: string,
-  amount: number,
-  dueDate: string,
-  status: "belum" | "sebagian" | "lunas" | "lewat",
-  paidAmount: number = 0,
-  paidAt: string | null = null,
-) {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM spp_invoices WHERE student_id = ? AND period = ? LIMIT 1",
-    [studentId, period],
-  )
-  if (rows.length > 0) return rows[0].id
-  const [res] = await pool.query<ResultSetHeader>(
-    "INSERT INTO spp_invoices (school_id, student_id, period, amount, due_date, status, paid_amount, paid_at, method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-    [schoolId, studentId, period, amount, dueDate, status, paidAmount, paidAt, paidAt ? "transfer" : null],
-  )
-  return res.insertId
-}
-
-async function ensureAnnouncement(
-  schoolId: number,
-  authorId: number,
-  title: string,
-  body: string,
-) {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM announcements WHERE school_id = ? AND title = ? LIMIT 1",
-    [schoolId, title],
-  )
-  if (rows.length > 0) return rows[0].id
-  const [res] = await pool.query<ResultSetHeader>(
-    "INSERT INTO announcements (school_id, author_id, title, body) VALUES (?, ?, ?, ?)",
-    [schoolId, authorId, title, body],
-  )
-  return res.insertId
-}
-
-async function ensureSchedule(
-  schoolId: number,
-  classId: number,
-  dayOfWeek: number,
-  startTime: string,
-  endTime: string,
-  subject: string,
-  teacherId: number,
-) {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM schedules WHERE class_id = ? AND day_of_week = ? AND start_time = ? LIMIT 1",
-    [classId, dayOfWeek, startTime],
-  )
-  if (rows.length > 0) return rows[0].id
-  const [res] = await pool.query<ResultSetHeader>(
-    "INSERT INTO schedules (school_id, class_id, day_of_week, start_time, end_time, subject, teacher_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
-    [schoolId, classId, dayOfWeek, startTime, endTime, subject, teacherId],
-  )
-  return res.insertId
-}
-
-async function ensureGallery(
-  schoolId: number,
-  title: string,
-  description: string,
-  coverUrl: string,
-  eventDate: string,
-) {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM galleries WHERE school_id = ? AND title = ? LIMIT 1",
-    [schoolId, title],
-  )
-  if (rows.length > 0) return rows[0].id
-  const [res] = await pool.query<ResultSetHeader>(
-    "INSERT INTO galleries (school_id, title, description, cover_url, event_date) VALUES (?, ?, ?, ?, ?)",
-    [schoolId, title, description, coverUrl, eventDate],
-  )
-  return res.insertId
-}
-
-async function ensureGalleryItem(
-  galleryId: number,
-  photoUrl: string,
-  caption: string,
-) {
-  const [rows] = await pool.query<RowDataPacket[]>(
-    "SELECT id FROM gallery_items WHERE gallery_id = ? AND photo_url = ? LIMIT 1",
-    [galleryId, photoUrl],
-  )
-  if (rows.length > 0) return rows[0].id
-  const [res] = await pool.query<ResultSetHeader>(
-    "INSERT INTO gallery_items (gallery_id, photo_url, caption) VALUES (?, ?, ?)",
-    [galleryId, photoUrl, caption],
-  )
-  return res.insertId
 }
 
 export async function ensureDemoData() {
-  const schoolId = await findOrCreateSchool("TK Tunas Bangsa (Demo)", "tk-tunas-bangsa-demo")
-  const adminId = await findOrCreateUser(
-    schoolId,
-    "Admin Demo",
-    "admin@demo.id",
-    "admin123",
-    "admin",
+  await ensureSchema()
+  const passwordHash = await bcrypt.hash("demo12345", 10)
+
+  await pool.query(
+    `INSERT INTO schools (name, slug, phone, address, plan_code, subscription_status, tenant_uid)
+     VALUES (?, ?, ?, ?, 'pro', 'trial', ?)
+     ON DUPLICATE KEY UPDATE name=VALUES(name), phone=VALUES(phone), address=VALUES(address), plan_code='pro'`,
+    ["SMA Nusantara Mandiri Demo", "sma-nusantara-mandiri-demo", "021-7788-2026", "Jl. Pendidikan Raya No. 17, Bandung", "sma-nusantara-demo"],
   )
-  const guruAId = await findOrCreateUser(
-    schoolId,
-    "Bu Anita",
-    "guru@demo.id",
-    "guru123",
-    "guru",
-  )
-  const guruBId = await findOrCreateUser(
-    schoolId,
-    "Bu Rini",
-    "guru2@demo.id",
-    "guru123",
-    "guru",
+  const schoolId = Number((await getOne("SELECT id FROM schools WHERE slug=?", ["sma-nusantara-mandiri-demo"])).id)
+
+  const existing = await getOne("SELECT COUNT(*) AS total FROM students WHERE school_id=?", [schoolId])
+  if (Number(existing?.total ?? 0) >= 300) {
+    await ensureCurrentOperationalData(schoolId)
+    console.log("[seed] SMA demo data already exists; current attendance/SPP ensured")
+    return
+  }
+
+  await pool.query("SET FOREIGN_KEY_CHECKS=0")
+  for (const table of ["report_cards", "grade_entries", "assessment_types", "attendance", "spp_invoices", "schedules", "class_subjects", "teacher_subjects", "guardians", "students", "classes", "subjects", "majors", "semesters", "academic_years", "grade_levels", "education_levels", "announcements", "galleries", "gallery_items"]) {
+    await pool.query(`DELETE FROM ${table} WHERE school_id = ?`, [schoolId]).catch(async () => {})
+  }
+  await pool.query("DELETE FROM users WHERE school_id = ?", [schoolId])
+  await pool.query("SET FOREIGN_KEY_CHECKS=1")
+
+  const adminId = await insert(
+    "INSERT INTO users (school_id, name, email, nip, phone, subject_specialty, password_hash, role) VALUES (?, ?, ?, ?, ?, ?, ?, 'admin')",
+    [schoolId, "Admin SMA Demo", "admin@takaschool-demo.id", "ADM-2026-001", "081200000001", "Administrasi Sekolah", passwordHash],
   )
 
-  await ensureAcademicFoundation(schoolId)
-
-  const classA = await findOrCreateClass(schoolId, "Kelas A - Apel", "TK A", guruAId)
-  const classB = await findOrCreateClass(schoolId, "Kelas B - Beruang", "TK B", guruBId)
-
-  // Data Siswa Kelas A
-  const seedStudentsA: Array<[string, string, "L" | "P", string, string]> = [
-    ["2324001", "Aisha Putri Wibowo", "P", "Ibu Sari", "628111111111"],
-    ["2324002", "Bima Saputra", "L", "Bapak Joko", "628111111112"],
-    ["2324003", "Chandra Wijaya", "L", "Ibu Wati", "628111111113"],
-    ["2324004", "Dinda Maharani", "P", "Bapak Andre", "628111111114"],
-    ["2324005", "Evan Pratama", "L", "Ibu Rani", "628111111115"],
-    ["2324006", "Fathia Az-Zahra", "P", "Ibu Ningsih", "628111111116"],
-    ["2324007", "Gibran Rakabuming", "L", "Bapak Budi", "628111111117"],
+  const levelId = await insert("INSERT INTO education_levels (school_id, code, name, sort_order) VALUES (?, 'sma', 'SMA', 5)", [schoolId])
+  const gradeIds: Record<string, number> = {}
+  for (const [code, name, sort] of [["10", "Kelas X", 10], ["11", "Kelas XI", 11], ["12", "Kelas XII", 12]] as const) {
+    gradeIds[code] = await insert("INSERT INTO grade_levels (school_id, education_level_id, code, name, sort_order) VALUES (?, ?, ?, ?, ?)", [schoolId, levelId, code, name, sort])
+  }
+  const ayId = await insert("INSERT INTO academic_years (school_id, name, start_date, end_date, is_active) VALUES (?, '2026/2027', '2026-07-01', '2027-06-30', 1)", [schoolId])
+  const semesterIds = [
+    await insert("INSERT INTO semesters (school_id, academic_year_id, name, sort_order, start_date, end_date, is_active) VALUES (?, ?, 'Ganjil', 1, '2026-07-01', '2026-12-31', 1)", [schoolId, ayId]),
+    await insert("INSERT INTO semesters (school_id, academic_year_id, name, sort_order, start_date, end_date, is_active) VALUES (?, ?, 'Genap', 2, '2027-01-01', '2027-06-30', 0)", [schoolId, ayId]),
   ]
-  const studentAIds: number[] = []
-  for (const [nis, n, g, p, w] of seedStudentsA) {
-    const sId = await ensureStudent(schoolId, classA, nis, n, g, p, w)
-    studentAIds.push(sId)
+  const majorIds: Record<string, number> = {}
+  for (const major of ["IPA", "IPS", "Bahasa"]) majorIds[major] = await insert("INSERT INTO majors (school_id, education_level_id, name) VALUES (?, ?, ?)", [schoolId, levelId, major])
+
+  const subjectIds: Record<string, number> = {}
+  for (const [code, name] of subjects) subjectIds[code] = await insert("INSERT INTO subjects (school_id, education_level_id, code, name, description) VALUES (?, ?, ?, ?, ?)", [schoolId, levelId, code, name, `Mata pelajaran SMA: ${name}`])
+
+  const teacherIds: number[] = []
+  for (let i = 0; i < 30; i += 1) {
+    const gender: Gender = i % 3 === 0 ? "P" : "L"
+    const name = `${gender === "L" ? "Pak" : "Bu"} ${pick(gender === "L" ? maleFirst : femaleFirst, i)} ${pick(lastNames, i + 4)}`
+    const subj = subjects[i % subjects.length]
+    const id = await insert(
+      "INSERT INTO users (school_id, name, email, nip, phone, subject_specialty, password_hash, role) VALUES (?, ?, ?, ?, ?, ?, ?, 'guru')",
+      [schoolId, name, `${slug(name)}@takaschool-demo.id`, `198${String(700000 + i * 31)}${String(i + 1).padStart(3, "0")}`, phone(300 + i), subj[1], passwordHash],
+    )
+    teacherIds.push(id)
   }
 
-  // Data Siswa Kelas B
-  const seedStudentsB: Array<[string, string, "L" | "P", string, string]> = [
-    ["2223001", "Hana Larasati", "P", "Ibu Dewi", "628222222221"],
-    ["2223002", "Iqbal Ramadhan", "L", "Bapak Agus", "628222222222"],
-    ["2223003", "Jihan Fahira", "P", "Ibu Sinta", "628222222223"],
-    ["2223004", "Kevin Sanjaya", "L", "Bapak Heri", "628222222224"],
-    ["2223005", "Lestari Puji", "P", "Ibu Rina", "628222222225"],
+  const subjectCodes = subjects.map((s) => s[0])
+  for (let idx = 0; idx < subjectCodes.length; idx += 1) {
+    const code = subjectCodes[idx]
+    await pool.query("INSERT INTO teacher_subjects (school_id, teacher_id, subject_id) VALUES (?, ?, ?)", [schoolId, teacherIds[idx % teacherIds.length], subjectIds[code]])
+  }
+
+  const classIds: Array<{ id: number; name: string; grade: string; major: string; homeroom: number }> = []
+  let classNo = 0
+  for (const grade of ["10", "11", "12"]) {
+    for (const major of ["IPA", "IPS", "Bahasa"]) {
+      for (const paralel of ["1", "2"]) {
+        if (classIds.length >= 15) break
+        const homeroom = teacherIds[classNo % teacherIds.length]
+        const name = `${grade === "10" ? "X" : grade === "11" ? "XI" : "XII"} ${major} ${paralel}`
+        const id = await insert(
+          "INSERT INTO classes (school_id, education_level_id, grade_level_id, academic_year_id, name, grade_level, homeroom_teacher_id, major_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+          [schoolId, levelId, gradeIds[grade], ayId, name, `Kelas ${grade}`, homeroom, majorIds[major]],
+        )
+        classIds.push({ id, name, grade, major, homeroom })
+        classNo += 1
+      }
+    }
+  }
+
+  for (const klass of classIds) {
+    for (const code of subjectByMajor[klass.major]) {
+      const teacherId = teacherIds[(subjects.findIndex((s) => s[0] === code) + classIds.indexOf(klass)) % teacherIds.length]
+      await pool.query("INSERT INTO class_subjects (school_id, class_id, subject_id, teacher_id) VALUES (?, ?, ?, ?)", [schoolId, klass.id, subjectIds[code], teacherId])
+    }
+  }
+
+  const studentRows: Array<{ id: number; classId: number; index: number; name: string }> = []
+  for (let i = 0; i < 315; i += 1) {
+    const klass = classIds[i % classIds.length]
+    const gender: Gender = i % 2 === 0 ? "L" : "P"
+    const name = `${pick(gender === "L" ? maleFirst : femaleFirst, i)} ${pick(lastNames, i)} ${pick(lastNames, i + 7)}`
+    const parentName = gender === "L" ? pick(fatherNames, i) : pick(motherNames, i)
+    const birthYear = klass.grade === "10" ? 2010 : klass.grade === "11" ? 2009 : 2008
+    const id = await insert(
+      `INSERT INTO students (school_id, class_id, nis, nisn, email, phone, name, nickname, gender, birth_place, birth_date, religion, parent_name, parent_wa, address, blood_type, allergies, medical_notes, emergency_contact_name, emergency_contact_phone, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'aktif')`,
+      [schoolId, klass.id, `26${String(i + 1).padStart(4, "0")}`, `00${String(3126000000 + i)}`, `${slug(name)}@siswa.takaschool-demo.id`, phone(1000 + i), name, name.split(" ")[0], gender, pick(["Bandung", "Cimahi", "Sumedang", "Garut", "Tasikmalaya"], i), `${birthYear}-${String((i % 12) + 1).padStart(2, "0")}-${String((i % 27) + 1).padStart(2, "0")}`, pick(religions, i), parentName, phone(2000 + i), `${pick(streets, i)} No. ${(i % 120) + 1}, Bandung`, pick(bloodTypes, i), i % 23 === 0 ? "Alergi seafood" : null, i % 31 === 0 ? "Riwayat asma ringan" : null, parentName, phone(2000 + i)],
+    )
+    studentRows.push({ id, classId: klass.id, index: i, name })
+    await pool.query("INSERT INTO guardians (school_id, student_id, relation, name, phone, whatsapp, email, occupation, address, is_primary) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 1)", [schoolId, id, gender === "L" ? "Ayah" : "Ibu", parentName, phone(2000 + i), phone(2000 + i), `${slug(parentName)}${i}@wali.takaschool-demo.id`, pick(["Wiraswasta", "Karyawan Swasta", "PNS", "Guru", "Perawat", "Pedagang", "Teknisi"], i), `${pick(streets, i)} No. ${(i % 120) + 1}, Bandung`])
+  }
+
+  const times = [["07:00:00", "08:30:00"], ["08:45:00", "10:15:00"], ["10:30:00", "12:00:00"], ["13:00:00", "14:30:00"]]
+  for (const klass of classIds) {
+    const codes = subjectByMajor[klass.major]
+    for (let day = 1; day <= 5; day += 1) {
+      for (let slot = 0; slot < times.length; slot += 1) {
+        const code = codes[(day + slot + classIds.indexOf(klass)) % codes.length]
+        const teacherId = teacherIds[(subjects.findIndex((s) => s[0] === code) + day + slot) % teacherIds.length]
+        await pool.query("INSERT INTO schedules (school_id, class_id, subject_id, day_of_week, start_time, end_time, subject, teacher_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [schoolId, klass.id, subjectIds[code], day, times[slot][0], times[slot][1], subjects.find((s) => s[0] === code)?.[1] ?? code, teacherId])
+      }
+    }
+  }
+
+  const typeIds = [
+    await insert("INSERT INTO assessment_types (school_id, name, weight) VALUES (?, 'Tugas Harian', 1)", [schoolId]),
+    await insert("INSERT INTO assessment_types (school_id, name, weight) VALUES (?, 'Ulangan Harian', 1.25)", [schoolId]),
+    await insert("INSERT INTO assessment_types (school_id, name, weight) VALUES (?, 'PTS', 1.5)", [schoolId]),
+    await insert("INSERT INTO assessment_types (school_id, name, weight) VALUES (?, 'PAS', 2)", [schoolId]),
   ]
-  const studentBIds: number[] = []
-  for (const [nis, n, g, p, w] of seedStudentsB) {
-    const sId = await ensureStudent(schoolId, classB, nis, n, g, p, w)
-    studentBIds.push(sId)
-  }
-
-  // Generate Attendance (Last 3 days)
-  const today = new Date()
-  for (let i = 0; i < 3; i++) {
-    const dateStr = new Date(today.getFullYear(), today.getMonth(), today.getDate() - i).toISOString().split('T')[0]
-    for (const sId of studentAIds) {
-      const status = Math.random() > 0.85 ? "izin" : "hadir"
-      await ensureAttendance(schoolId, classA, sId, dateStr, status)
-    }
-    for (const sId of studentBIds) {
-      const status = Math.random() > 0.9 ? "sakit" : "hadir"
-      await ensureAttendance(schoolId, classB, sId, dateStr, status)
+  for (const student of studentRows) {
+    const klass = classIds.find((c) => c.id === student.classId)!
+    for (const code of subjectByMajor[klass.major].slice(0, 8)) {
+      for (let t = 0; t < 4; t += 1) {
+        const base = 72 + ((student.index + code.charCodeAt(0) + t * 7) % 24)
+        const score = Math.min(98, Math.max(58, base + (student.index % 9 === 0 ? -8 : 0)))
+        const teacherId = teacherIds[(subjects.findIndex((s) => s[0] === code) + t) % teacherIds.length]
+        await pool.query("INSERT INTO grade_entries (school_id, student_id, subject_id, assessment_type_id, semester_id, semester_label, score, note, assessed_at, created_by) VALUES (?, ?, ?, ?, ?, 'Ganjil 2026/2027', ?, ?, ?, ?)", [schoolId, student.id, subjectIds[code], typeIds[t], semesterIds[0], score, score < 70 ? "Perlu pendampingan belajar" : score >= 90 ? "Sangat baik dan konsisten" : "Baik", dateAdd(new Date("2026-08-01"), (student.index + t * 9) % 100), teacherId])
+      }
     }
   }
 
-  // Generate SPP Invoices (Current Month)
-  const currentPeriod = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`
-  const dueDate = `${currentPeriod}-10`
-  const sppAmount = 250000
-
-  for (const sId of studentAIds) {
-    const isPaid = Math.random() > 0.4
-    if (isPaid) {
-      await ensureSppInvoice(schoolId, sId, currentPeriod, sppAmount, dueDate, "lunas", sppAmount, `${currentPeriod}-05 09:00:00`)
-    } else {
-      await ensureSppInvoice(schoolId, sId, currentPeriod, sppAmount, dueDate, "belum", 0, null)
-    }
-  }
-  for (const sId of studentBIds) {
-    const isPaid = Math.random() > 0.3
-    if (isPaid) {
-      await ensureSppInvoice(schoolId, sId, currentPeriod, sppAmount, dueDate, "lunas", sppAmount, `${currentPeriod}-02 10:30:00`)
-    } else {
-      await ensureSppInvoice(schoolId, sId, currentPeriod, sppAmount, dueDate, "belum", 0, null)
+  for (let d = 0; d < 30; d += 1) {
+    const date = dateAdd(new Date("2026-10-01"), d)
+    const day = new Date(date).getDay()
+    if (day === 0 || day === 6) continue
+    for (const student of studentRows) {
+      const r = (student.index * 13 + d * 7) % 100
+      const status: AttendanceStatus = r < 88 ? "hadir" : r < 93 ? "izin" : r < 97 ? "sakit" : "alpa"
+      await pool.query("INSERT INTO attendance (school_id, class_id, student_id, date, status, recorded_by) VALUES (?, ?, ?, ?, ?, ?)", [schoolId, student.classId, student.id, date, status, adminId])
     }
   }
 
-  // Generate Announcements
-  await ensureAnnouncement(
-    schoolId,
-    adminId,
-    "Pemberitahuan Libur Semester",
-    "Yth. Bapak/Ibu Wali Murid, diberitahukan bahwa libur akhir semester ganjil akan dimulai pada tanggal 18 Desember hingga 2 Januari. Siswa masuk kembali pada tanggal 3 Januari. Terima kasih."
-  )
-  await ensureAnnouncement(
-    schoolId,
-    guruAId,
-    "Kegiatan Mewarnai Bersama",
-    "Mohon untuk membawakan pensil warna atau krayon pada hari Jumat ini untuk kegiatan mewarnai bersama di kelas."
-  )
-
-  // Generate Schedules (Senin - Jumat)
-  const subjects = ["Agama", "Matematika Dasar", "Membaca & Menulis", "Seni Rupa", "Olahraga", "Bermain Bebas"]
-  for (let day = 1; day <= 5; day++) {
-    await ensureSchedule(schoolId, classA, day, "08:00:00", "09:00:00", subjects[(day + 0) % subjects.length], guruAId)
-    await ensureSchedule(schoolId, classA, day, "09:00:00", "10:00:00", subjects[(day + 1) % subjects.length], guruAId)
-    await ensureSchedule(schoolId, classA, day, "10:30:00", "11:30:00", subjects[(day + 2) % subjects.length], guruAId)
-
-    await ensureSchedule(schoolId, classB, day, "08:00:00", "09:00:00", subjects[(day + 3) % subjects.length], guruBId)
-    await ensureSchedule(schoolId, classB, day, "09:00:00", "10:00:00", subjects[(day + 4) % subjects.length], guruBId)
-    await ensureSchedule(schoolId, classB, day, "10:30:00", "11:30:00", subjects[(day + 5) % subjects.length], guruBId)
+  const periods = ["2026-07", "2026-08", "2026-09", "2026-10"]
+  for (const student of studentRows) {
+    for (let pi = 0; pi < periods.length; pi += 1) {
+      const period = periods[pi]
+      const status = (student.index + pi) % 9 === 0 ? "belum" : (student.index + pi) % 13 === 0 ? "sebagian" : "lunas"
+      const amount = 550000
+      const paid = status === "lunas" ? amount : status === "sebagian" ? 300000 : 0
+      await pool.query("INSERT INTO spp_invoices (school_id, student_id, period, amount, due_date, status, paid_amount, paid_at, method) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", [schoolId, student.id, period, amount, `${period}-10`, status, paid, paid > 0 ? `${period}-08 09:00:00` : null, paid > 0 ? "transfer" : null])
+    }
   }
 
-  // Generate Galleries
-  const gal1Id = await ensureGallery(schoolId, "Kegiatan Lomba 17 Agustus", "Keseruan lomba mewarnai dan makan kerupuk dalam rangka kemerdekaan RI", "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=800", "2023-08-17")
-  await ensureGalleryItem(gal1Id, "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=800", "Lomba Mewarnai")
-  await ensureGalleryItem(gal1Id, "https://images.unsplash.com/photo-1502086223501-7ea6ecd79368?auto=format&fit=crop&q=80&w=800", "Keseruan anak-anak")
+  await pool.query("INSERT INTO announcements (school_id, author_id, title, body) VALUES (?, ?, ?, ?)", [schoolId, adminId, "Simulasi Ujian Tengah Semester", "PTS semester ganjil akan dilaksanakan pekan depan. Mohon wali kelas memantau kesiapan siswa."])
 
-  const gal2Id = await ensureGallery(schoolId, "Kunjungan ke Kebun Binatang", "Edukasi satwa liar di kebun binatang kota", "https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&q=80&w=800", "2023-10-10")
-  await ensureGalleryItem(gal2Id, "https://images.unsplash.com/photo-1534567153574-2b12153a87f0?auto=format&fit=crop&q=80&w=800", "Melihat gajah")
-  await ensureGalleryItem(gal2Id, "https://images.unsplash.com/photo-1588615419953-62584d4b14d4?auto=format&fit=crop&q=80&w=800", "Melihat jerapah")
-
-  console.log(`[seed] OK schoolId=${schoolId} adminId=${adminId} guruAId=${guruAId} guruBId=${guruBId}`)
+  console.log("[seed] SMA demo data inserted")
 }
 
-if (import.meta.url === `file://${process.argv[1]}`) {
-  ensureDemoData()
-    .then(() => process.exit(0))
-    .catch((e) => {
-      console.error(e)
-      process.exit(1)
-    })
+async function main() {
+  await ensureDemoData()
+  await pool.end()
+}
+
+const isCli = process.argv[1] ? import.meta.url === pathToFileURL(process.argv[1]).href : false
+if (isCli) {
+  main().catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
 }
