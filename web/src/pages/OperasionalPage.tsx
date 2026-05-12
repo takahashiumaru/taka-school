@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import AppLayout from "../components/AppLayout"
+import Pagination from "../components/Pagination"
 import { AlertBox } from "../components/UiState"
+import { usePagination } from "../hooks/usePagination"
 import { Operations } from "../lib/api"
 
 const tabs = [
@@ -19,6 +21,16 @@ export default function OperasionalPage() {
   const [items, setItems] = useState<any[]>([])
   const [error, setError] = useState<string | null>(null)
   const [form, setForm] = useState<any>({})
+
+  const { page, pageSize, setPage, setPageSize } = usePagination({
+    defaultPageSize: 12,
+    resetDeps: [tab],
+  })
+
+  const paginatedItems = useMemo(() => {
+    const start = (page - 1) * pageSize
+    return items.slice(start, start + pageSize)
+  }, [items, page, pageSize])
 
   async function load(next = tab) {
     setError(null)
@@ -57,13 +69,25 @@ export default function OperasionalPage() {
       <button className="btn-primary md:col-span-3">Tambah {tabs.find(([k])=>k===tab)?.[1]}</button>
     </form>
     <div className="mt-5 grid md:grid-cols-2 xl:grid-cols-3 gap-3">
-      {items.map((it) => <div key={it.id} className="rounded-2xl bg-white p-4 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
+      {paginatedItems.map((it) => <div key={it.id} className="rounded-2xl bg-white p-4 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
         <div className="flex items-start justify-between gap-3"><div className="font-bold text-slate-900 dark:text-slate-100">{it.title || it.name || it.subject || it.type}</div>{tab === "letters" && <a href={`/operasional/letters/${it.id}/print`} className="text-xs font-semibold text-primary-700 dark:text-primary-300">Cetak</a>}</div>
         <div className="mt-2 text-sm text-slate-600 dark:text-slate-400 space-y-1">
           {Object.entries(it).filter(([k])=>!["id","school_id","created_at"].includes(k)).slice(0,6).map(([k,v]) => <div key={k}><span className="text-slate-400">{k}:</span> {String(v ?? "—")}</div>)}
         </div>
       </div>)}
     </div>
+    {items.length > 0 && (
+      <div className="mt-5">
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={items.length}
+          loading={false}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
+      </div>
+    )}
   </AppLayout>
 }
 
