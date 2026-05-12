@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs"
 import type { RowDataPacket, ResultSetHeader } from "mysql2"
 import { pool } from "../db.js"
 import { requireAdmin, requireSchoolRead } from "../auth.js"
+import { parsePagination, paginationMeta } from "../pagination.js"
 
 const router = Router()
 
@@ -18,13 +19,24 @@ router.use(requireSchoolRead())
 
 router.get("/", async (req, res) => {
   const schoolId = req.user!.schoolId
+  const { page, pageSize, limit, offset } = parsePagination(req.query)
+  
+  const [[{ total }]] = await pool.query<RowDataPacket[]>(
+    `SELECT COUNT(*) as total FROM users WHERE school_id = ? AND role = 'guru'`,
+    [schoolId]
+  )
+
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT id, school_id, name, email, role, is_active, created_at
      FROM users WHERE school_id = ? AND role = 'guru'
-     ORDER BY name ASC`,
-    [schoolId],
+     ORDER BY name ASC LIMIT ? OFFSET ?`,
+    [schoolId, limit, offset],
   )
-  res.json({ items: rows })
+
+  res.json({
+    items: rows,
+    pagination: paginationMeta(Number(total), page, pageSize),
+  })
 })
 
 router.post("/", requireAdmin(), async (req, res) => {

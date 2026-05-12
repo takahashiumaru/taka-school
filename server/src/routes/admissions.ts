@@ -3,6 +3,7 @@ import { z } from "zod"
 import type { ResultSetHeader, RowDataPacket } from "mysql2"
 import { pool } from "../db.js"
 import { requireOffice } from "../auth.js"
+import { parsePagination, paginationMeta } from "../pagination.js"
 
 const router = Router()
 
@@ -58,12 +59,29 @@ router.get("/", async (req, res) => {
   const schoolId = req.user!.schoolId
   const status = (req.query.status as string | undefined) || ""
   const q = (req.query.q as string | undefined)?.trim() || ""
+  const { page, pageSize, limit, offset } = parsePagination(req.query)
+
   const where = ["school_id = ?"]
   const params: unknown[] = [schoolId]
   if (status) { where.push("status = ?"); params.push(status) }
   if (q) { where.push("(name LIKE ? OR parent_name LIKE ? OR parent_wa LIKE ?)"); const like = `%${q}%`; params.push(like, like, like) }
-  const [rows] = await pool.query<RowDataPacket[]>(`SELECT * FROM admissions_applicants WHERE ${where.join(" AND ")} ORDER BY created_at DESC LIMIT 500`, params)
-  res.json({ items: rows })
+
+  const whereClause = where.join(" AND ")
+
+  const [[{ total }]] = await pool.query<RowDataPacket[]>(
+    `SELECT COUNT(*) as total FROM admissions_applicants WHERE ${whereClause}`,
+    params
+  )
+
+  const [rows] = await pool.query<RowDataPacket[]>(
+    `SELECT * FROM admissions_applicants WHERE ${whereClause} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
+    [...params, limit, offset]
+  )
+
+  res.json({
+    items: rows,
+    pagination: paginationMeta(Number(total), page, pageSize),
+  })
 })
 
 router.get("/:id", async (req, res) => {

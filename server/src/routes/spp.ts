@@ -3,6 +3,7 @@ import { z } from "zod"
 import type { RowDataPacket, ResultSetHeader } from "mysql2"
 import { pool } from "../db.js"
 import { requireOffice, requireSchoolRead } from "../auth.js"
+import { parsePagination, paginationMeta } from "../pagination.js"
 
 const router = Router()
 
@@ -34,11 +35,22 @@ router.get("/", async (req, res) => {
   const period = (req.query.period as string | undefined) || ""
   const status = (req.query.status as string | undefined) || ""
   const classId = req.query.classId ? Number(req.query.classId) : null
+  const { page, pageSize, limit, offset } = parsePagination(req.query)
+  
   const where: string[] = ["i.school_id = ?"]
   const params: unknown[] = [schoolId]
   if (period) { where.push("i.period = ?"); params.push(period) }
   if (status) { where.push("i.status = ?"); params.push(status) }
   if (classId) { where.push("s.class_id = ?"); params.push(classId) }
+
+  const [countRows] = await pool.query<RowDataPacket[]>(
+    `SELECT COUNT(*) as total
+     FROM spp_invoices i
+     JOIN students s ON s.id = i.student_id
+     WHERE ${where.join(" AND ")}`,
+    params,
+  )
+  const total = Number(countRows[0].total)
 
   const [rows] = await pool.query<RowDataPacket[]>(
     `SELECT i.*, s.name AS student_name, s.parent_name, s.parent_wa, s.class_id, c.name AS class_name
@@ -46,10 +58,14 @@ router.get("/", async (req, res) => {
      JOIN students s ON s.id = i.student_id
      LEFT JOIN classes c ON c.id = s.class_id
      WHERE ${where.join(" AND ")}
-     ORDER BY i.period DESC, s.name ASC LIMIT 1000`,
-    params,
+     ORDER BY i.period DESC, s.name ASC
+     LIMIT ? OFFSET ?`,
+    [...params, limit, offset],
   )
-  res.json({ items: rows })
+  res.json({ 
+    items: rows,
+    pagination: paginationMeta(total, page, pageSize),
+  })
 })
 
 router.get("/:id", async (req, res) => {

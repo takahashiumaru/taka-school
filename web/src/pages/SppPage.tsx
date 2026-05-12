@@ -3,8 +3,10 @@ import { Link } from "react-router-dom"
 import AppLayout from "../components/AppLayout"
 import Select from "../components/Select"
 import MonthPicker from "../components/MonthPicker"
+import Pagination from "../components/Pagination"
 import ConfirmDialog from "../components/ConfirmDialog"
 import { AlertBox, EmptyState, TableSkeleton } from "../components/UiState"
+import { usePagination } from "../hooks/usePagination"
 import {
   Classes,
   Spp,
@@ -15,6 +17,7 @@ import {
   waLink,
   type Klass,
   type SppInvoice,
+  type PaginationMeta,
 
 } from "../lib/api"
 
@@ -31,6 +34,7 @@ function formatRp(n: number | string): string {
 export default function SppPage() {
   const user = getUser()
   const [items, setItems] = useState<SppInvoice[]>([])
+  const [pagination, setPagination] = useState<PaginationMeta | null>(null)
   const [financeItems, setFinanceItems] = useState<FinanceInvoice[]>([])
   const [classes, setClasses] = useState<Klass[]>([])
 
@@ -43,6 +47,10 @@ export default function SppPage() {
   const [deleteTarget, setDeleteTarget] = useState<SppInvoice | null>(null)
   const [deleting, setDeleting] = useState(false)
 
+  const { page, pageSize, setPage, setPageSize } = usePagination({
+    resetDeps: [period, statusFilter, classFilter],
+  })
+
   async function refresh() {
     setLoading(true)
     setError(null)
@@ -52,6 +60,8 @@ export default function SppPage() {
           period: period || undefined,
           status: statusFilter || undefined,
           classId: classFilter || undefined,
+          page,
+          pageSize,
         }),
         Finance.invoices({
           period: period || undefined,
@@ -61,6 +71,7 @@ export default function SppPage() {
         Classes.list(),
       ])
       setItems(s.items)
+      setPagination(s.pagination)
       setFinanceItems(f.items)
       setClasses(c.items)
     } catch (e) {
@@ -72,7 +83,7 @@ export default function SppPage() {
 
   useEffect(() => {
     refresh()
-  }, [period, statusFilter, classFilter])
+  }, [page, pageSize, period, statusFilter, classFilter])
 
   async function confirmDelete() {
     if (!deleteTarget) return
@@ -228,6 +239,17 @@ export default function SppPage() {
             </tbody>
           </table>
         </div>
+        {pagination && (
+          <Pagination
+            page={pagination.page}
+            pageSize={pagination.pageSize}
+            total={pagination.total}
+            totalPages={pagination.totalPages}
+            loading={loading}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+          />
+        )}
       </div>
 
 

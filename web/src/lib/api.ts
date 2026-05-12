@@ -430,7 +430,14 @@ export const Students = {
 }
 
 export const Teachers = {
-  list: () => apiFetch<{ items: Teacher[] }>(`/api/teachers`),
+  list: (params?: { q?: string; page?: number; pageSize?: number }) => {
+    const q = new URLSearchParams()
+    if (params?.q) q.set("q", params.q)
+    if (params?.page) q.set("page", String(params.page))
+    if (params?.pageSize) q.set("pageSize", String(params.pageSize))
+    const s = q.toString()
+    return apiFetch<PaginatedResponse<Teacher>>(`/api/teachers${s ? `?${s}` : ""}`)
+  },
   create: (data: { name: string; email: string; password: string }) =>
     apiFetch<{ id: number }>(`/api/teachers`, { method: "POST", body: JSON.stringify(data) }),
   update: (id: number, data: Partial<{ name: string; email: string; password: string; isActive: boolean }>) =>
@@ -519,13 +526,15 @@ export const Finance = {
 }
 
 export const Spp = {
-  list: (params?: { period?: string; status?: string; classId?: number }) => {
+  list: (params?: { period?: string; status?: string; classId?: number; page?: number; pageSize?: number }) => {
     const q = new URLSearchParams()
     if (params?.period) q.set("period", params.period)
     if (params?.status) q.set("status", params.status)
     if (params?.classId) q.set("classId", String(params.classId))
+    if (params?.page) q.set("page", String(params.page))
+    if (params?.pageSize) q.set("pageSize", String(params.pageSize))
     const s = q.toString()
-    return apiFetch<{ items: SppInvoice[] }>(`/api/spp${s ? `?${s}` : ""}`)
+    return apiFetch<PaginatedResponse<SppInvoice>>(`/api/spp${s ? `?${s}` : ""}`)
   },
   get: (id: number) => apiFetch<SppInvoice>(`/api/spp/${id}`),
   create: (data: { studentId: number; period: string; amount: number; dueDate: string; note?: string | null }) =>
@@ -627,11 +636,13 @@ export type ApplicantInput = Partial<{
 
 export const Admissions = {
   publicCreate: (data: ApplicantInput) => apiFetch<{ id: number; status: AdmissionStatus }>(`/api/admissions/public`, { method: "POST", body: JSON.stringify(data) }),
-  list: (params: { q?: string; status?: string } = {}) => {
+  list: (params: { q?: string; status?: string; page?: number; pageSize?: number } = {}) => {
     const qs = new URLSearchParams()
     if (params.q) qs.set("q", params.q)
     if (params.status) qs.set("status", params.status)
-    return apiFetch<{ items: Applicant[] }>(`/api/admissions${qs.toString() ? `?${qs}` : ""}`)
+    if (params.page) qs.set("page", String(params.page))
+    if (params.pageSize) qs.set("pageSize", String(params.pageSize))
+    return apiFetch<PaginatedResponse<Applicant>>(`/api/admissions${qs.toString() ? `?${qs}` : ""}`)
   },
   get: (id: number) => apiFetch<Applicant>(`/api/admissions/${id}`),
   update: (id: number, data: Partial<ApplicantInput>) => apiFetch<{ ok: true }>(`/api/admissions/${id}`, { method: "PUT", body: JSON.stringify(data) }),
