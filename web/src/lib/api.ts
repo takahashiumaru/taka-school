@@ -700,4 +700,15 @@ export const Operations = {
   createExtracurricular: (data: any) => apiFetch<{ id: number }>(`/api/operations/extracurriculars`, { method: "POST", body: JSON.stringify(data) }),
   createCounseling: (data: any) => apiFetch<{ id: number }>(`/api/operations/counseling`, { method: "POST", body: JSON.stringify(data) }),
   createLetter: (data: any) => apiFetch<{ id: number }>(`/api/operations/letters`, { method: "POST", body: JSON.stringify(data) }),
+  updateLibrary: (id: number, data: any) => apiFetch<{ ok: boolean }>(`/api/operations/library-books/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  updateInventory: (id: number, data: any) => apiFetch<{ ok: boolean }>(`/api/operations/inventory/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  updateExtracurricular: (id: number, data: any) => apiFetch<{ ok: boolean }>(`/api/operations/extracurriculars/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  updateCounseling: (id: number, data: any) => apiFetch<{ ok: boolean }>(`/api/operations/counseling/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  updateLetter: (id: number, data: any) => apiFetch<{ ok: boolean }>(`/api/operations/letters/${id}`, { method: "PUT", body: JSON.stringify(data) }),
+  deleteLibrary: (id: number) => apiFetch<{ ok: boolean }>(`/api/operations/library-books/${id}`, { method: "DELETE" }),
+  deleteInventory: (id: number) => apiFetch<{ ok: boolean }>(`/api/operations/inventory/${id}`, { method: "DELETE" }),
+  deleteExtracurricular: (id: number) => apiFetch<{ ok: boolean }>(`/api/operations/extracurriculars/${id}`, { method: "DELETE" }),
+  deleteCounseling: (id: number) => apiFetch<{ ok: boolean }>(`/api/operations/counseling/${id}`, { method: "DELETE" }),
+  deleteLetter: (id: number) => apiFetch<{ ok: boolean }>(`/api/operations/letters/${id}`, { method: "DELETE" }),
+
 }
