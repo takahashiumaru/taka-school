@@ -343,25 +343,83 @@ export async function ensureDemoData() {
     await pool.query("INSERT INTO school_letters (school_id, letter_no, type, subject, recipient, status) VALUES (?, ?, ?, ?, ?, ?)", [schoolId, letterNo, type, subject, recipient, status])
   }
 
-  // Galleries
+  // Galleries with themed photos
   const galleries = [
-    ["Upacara Bendera 17 Agustus 2026", "Peringatan HUT RI ke-81 di lapangan sekolah dengan seluruh siswa dan guru.", "2026-08-17"],
-    ["Kegiatan MPLS 2026", "Masa Pengenalan Lingkungan Sekolah untuk siswa baru kelas X.", "2026-07-15"],
-    ["Lomba Olahraga Antar Kelas", "Kompetisi basket, futsal, dan voli antar kelas dalam rangka memperingati Hari Olahraga Nasional.", "2026-09-09"],
-    ["Pentas Seni Semester Ganjil", "Penampilan paduan suara, teater, dan band dari berbagai ekstrakurikuler.", "2026-10-20"],
-    ["Kunjungan Industri ke PT Telkom", "Siswa kelas XII IPA berkunjung ke PT Telkom Indonesia untuk mengenal dunia kerja.", "2026-09-25"],
-    ["Pelatihan Kepemimpinan OSIS", "Workshop leadership dan team building untuk pengurus OSIS periode 2026/2027.", "2026-08-05"],
+    {
+      title: "Upacara Bendera 17 Agustus 2026",
+      description: "Peringatan HUT RI ke-81 di lapangan sekolah dengan seluruh siswa dan guru.",
+      eventDate: "2026-08-17",
+      photos: [
+        "https://images.unsplash.com/photo-1557804506-669a67965ba0?w=800&h=600&fit=crop", // ceremony/students
+        "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=600&fit=crop", // university/students
+        "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&h=600&fit=crop", // group students
+        "https://images.unsplash.com/photo-1524178232363-1fb2b075b655?w=800&h=600&fit=crop", // students outdoor
+      ]
+    },
+    {
+      title: "Kegiatan MPLS 2026",
+      description: "Masa Pengenalan Lingkungan Sekolah untuk siswa baru kelas X.",
+      eventDate: "2026-07-15",
+      photos: [
+        "https://images.unsplash.com/photo-1509062522246-3755977927d7?w=800&h=600&fit=crop", // students meeting
+        "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=800&h=600&fit=crop", // team discussion
+        "https://images.unsplash.com/photo-1517486808906-6ca8b3f04846?w=800&h=600&fit=crop", // students working
+        "https://images.unsplash.com/photo-1523240795612-9a054b0db644?w=800&h=600&fit=crop", // classroom
+      ]
+    },
+    {
+      title: "Lomba Olahraga Antar Kelas",
+      description: "Kompetisi basket, futsal, dan voli antar kelas dalam rangka memperingati Hari Olahraga Nasional.",
+      eventDate: "2026-09-09",
+      photos: [
+        "https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&h=600&fit=crop", // basketball
+        "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=800&h=600&fit=crop", // soccer/futsal
+        "https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=800&h=600&fit=crop", // volleyball
+        "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&h=600&fit=crop", // sports field
+        "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=800&h=600&fit=crop", // basketball game
+      ]
+    },
+    {
+      title: "Pentas Seni Semester Ganjil",
+      description: "Penampilan paduan suara, teater, dan band dari berbagai ekstrakurikuler.",
+      eventDate: "2026-10-20",
+      photos: [
+        "https://images.unsplash.com/photo-1507676184212-d03ab07a01bf?w=800&h=600&fit=crop", // choir/singing
+        "https://images.unsplash.com/photo-1514320291840-2e0a9bf2a9ae?w=800&h=600&fit=crop", // music performance
+        "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?w=800&h=600&fit=crop", // band/music
+        "https://images.unsplash.com/photo-1516450360452-9312f5e86fc7?w=800&h=600&fit=crop", // concert/stage
+      ]
+    },
+    {
+      title: "Kunjungan Industri ke PT Telkom",
+      description: "Siswa kelas XII IPA berkunjung ke PT Telkom Indonesia untuk mengenal dunia kerja.",
+      eventDate: "2026-09-25",
+      photos: [
+        "https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&h=600&fit=crop", // office/workspace
+        "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=600&fit=crop", // business meeting
+        "https://images.unsplash.com/photo-1531482615713-2afd69097998?w=800&h=600&fit=crop", // office tour
+        "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?w=800&h=600&fit=crop", // professional setting
+      ]
+    },
+    {
+      title: "Pelatihan Kepemimpinan OSIS",
+      description: "Workshop leadership dan team building untuk pengurus OSIS periode 2026/2027.",
+      eventDate: "2026-08-05",
+      photos: [
+        "https://images.unsplash.com/photo-1531545514256-b1400bc00f31?w=800&h=600&fit=crop", // workshop/training
+        "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800&h=600&fit=crop", // team meeting
+        "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800&h=600&fit=crop", // presentation
+        "https://images.unsplash.com/photo-1521737711867-e3b97375f902?w=800&h=600&fit=crop", // teamwork
+      ]
+    },
   ]
-  for (let i = 0; i < galleries.length; i += 1) {
-    const [title, description, eventDate] = galleries[i]
-    const galleryId = await insert("INSERT INTO galleries (school_id, title, description, event_date) VALUES (?, ?, ?, ?)", [schoolId, title, description, eventDate])
+  
+  for (const gallery of galleries) {
+    const galleryId = await insert("INSERT INTO galleries (school_id, title, description, event_date) VALUES (?, ?, ?, ?)", [schoolId, gallery.title, gallery.description, gallery.eventDate])
     
-    // Add 3-5 dummy photo items per gallery
-    const photoCount = 3 + (i % 3)
-    for (let j = 0; j < photoCount; j += 1) {
-      const caption = `${title} - Foto ${j + 1}`
-      const photoUrl = `https://picsum.photos/seed/${schoolId}-${galleryId}-${j}/800/600`
-      await pool.query("INSERT INTO gallery_items (gallery_id, photo_url, caption) VALUES (?, ?, ?)", [galleryId, photoUrl, caption])
+    for (let j = 0; j < gallery.photos.length; j += 1) {
+      const caption = `${gallery.title} - Foto ${j + 1}`
+      await pool.query("INSERT INTO gallery_items (gallery_id, photo_url, caption) VALUES (?, ?, ?)", [galleryId, gallery.photos[j], caption])
     }
   }
 
