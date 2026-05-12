@@ -1,169 +1,279 @@
 # Taka School
 
-Aplikasi manajemen sekolah ringan untuk PAUD, TK, dan sekolah kecil. Monorepo berisi:
+Taka School adalah aplikasi manajemen sekolah berbasis web untuk **PAUD, TK, SD, SMP, dan SMA**. Project ini memakai monorepo dengan frontend React dan backend Express/MySQL, sudah disiapkan dengan data demo SMA realistis, dashboard analytics, PPDB online, pembayaran SPP, akademik, absensi, rapor, galeri, dan portal publik.
 
-- `web/` — frontend (Vite + React + TypeScript + Tailwind)
-- `server/` — backend (Express + TypeScript + MySQL)
+## Preview Produksi Saat Ini
 
-## Screenshots
+- App preview: `http://43.133.155.252:3000`
+- PPDB publik: `http://43.133.155.252:3000/ppdb`
+- Backend health: `http://43.133.155.252:3000/api/health`
+- Database demo aktif: `taka-school-demo`
 
-![Taka School - Landing Page](school.png)
-![Taka School - Dashboard](school1.png)
+## Contoh UI
 
-## Quick Start
+### Landing Page
+
+![Taka School Landing Page](school.png)
+
+### Dashboard Admin
+
+![Taka School Dashboard](school1.png)
+
+### PPDB + Pencarian Alamat OpenStreetMap
+
+![PPDB address search and map](docs/images/ppdb-address-map.jpg)
+
+### Pembayaran SPP
+
+![SPP dashboard](docs/images/spp-dashboard.jpg)
+
+## Fitur Utama
+
+- **Multi-jenjang sekolah**
+  - Mendukung PAUD, TK, SD, SMP, dan SMA.
+  - Struktur kelas fleksibel untuk kebutuhan sekolah berbeda.
+
+- **Dashboard analytics**
+  - Ringkasan siswa, guru, kelas, absensi, pembayaran, dan tren operasional.
+  - Chart dibuat custom SVG/CSS tanpa dependency chart eksternal.
+
+- **Manajemen siswa**
+  - CRUD data siswa.
+  - Detail siswa.
+  - Import/export data.
+  - Field pendukung seperti NIS, NISN, wali/orang tua, WhatsApp, alamat, status, dan kelas.
+
+- **Manajemen guru**
+  - Data guru, NIP, kontak, email, dan mata pelajaran/spesialisasi.
+  - Role guru untuk akses operasional.
+
+- **Manajemen kelas**
+  - Data kelas, wali kelas, kapasitas, dan detail anggota kelas.
+
+- **PPDB online**
+  - Form pendaftaran publik.
+  - Pencarian alamat via **OpenStreetMap/Nominatim**.
+  - Peta interaktif Leaflet + OpenStreetMap.
+  - User bisa klik/drag titik lokasi untuk mendapatkan latitude/longitude.
+  - Koordinat otomatis masuk ke catatan pendaftaran.
+
+- **Absensi dan operasional harian**
+  - Data absensi siswa.
+  - Rekap operasional untuk dashboard.
+
+- **SPP dan pembayaran**
+  - Generate tagihan SPP per periode.
+  - Tagihan manual.
+  - Status: belum bayar, sebagian, lunas, lewat jatuh tempo.
+  - Pembayaran/detail invoice langsung by ID.
+  - Ringkasan Total Tagihan, Terbayar, Sisa Piutang, dan Overdue dihitung dari data SPP yang sedang tampil.
+  - Reminder WhatsApp wali murid.
+
+- **Akademik dan rapor**
+  - Modul akademik.
+  - Rapor siswa.
+  - Detail rapor dan form input rapor.
+
+- **Portal dan konten publik**
+  - Landing page.
+  - Portal publik.
+  - Pengumuman.
+  - Jadwal.
+  - Galeri.
+
+- **Role dan keamanan dasar**
+  - Login admin/guru.
+  - JWT auth.
+  - Production guard: `JWT_SECRET` wajib kuat.
+  - Production guard: `CORS_ORIGIN` tidak boleh wildcard `*`.
+  - `.env` asli tidak boleh dicommit; gunakan `.env.example`.
+
+- **AI-ready developer docs**
+  - Struktur project jelas.
+  - Plan/playbook tersedia di folder `.hermes/` lokal, namun folder ini di-ignore agar tidak ikut commit.
+
+## Struktur Project
+
+```text
+.
+├── server/                 # Express + TypeScript + MySQL API
+│   ├── src/
+│   │   ├── routes/         # API routes: auth, siswa, guru, kelas, SPP, PPDB, maps, dll.
+│   │   ├── scripts/        # Seed data demo
+│   │   ├── auth.ts         # JWT auth utilities
+│   │   ├── db.ts           # MySQL connection pool
+│   │   ├── index.ts        # Express app entry
+│   │   └── schema.ts       # Auto-migrate schema
+│   └── .env.example
+├── web/                    # React + Vite + Tailwind frontend
+│   ├── src/
+│   │   ├── pages/          # Halaman aplikasi
+│   │   ├── components/     # Reusable UI components
+│   │   └── lib/api.ts      # API client
+│   └── .env.example
+├── database/
+│   └── taka-school-demo.sql # Export database demo
+├── docs/images/            # Screenshot UI untuk dokumentasi
+├── .env.example            # Template env aman, tanpa secret asli
+└── README.md
+```
+
+## Akun Demo
+
+Data seed demo menggunakan akun berikut:
+
+- Admin
+  - Email: `admin@takaschool-demo.id`
+  - Password: `demo12345`
+
+- Guru
+  - Email: `bu.siti.kurniawan@takaschool-demo.id`
+  - Password: `demo12345`
+
+> Jangan gunakan akun demo untuk produksi sungguhan tanpa mengganti password dan `JWT_SECRET`.
+
+## Quick Start Lokal
 
 ```bash
-# 1) Install semua dependency (root + server + web)
+# 1) Install dependency root + server + web
 npm install
 
-# 2) Salin & edit file environment
-cp server/.env.example server/.env       # edit DATABASE_URL kamu
-cp web/.env.example web/.env             # opsional; default ok untuk lokal
+# 2) Salin environment example
+cp server/.env.example server/.env
+cp web/.env.example web/.env
 
-# 3) Jalankan frontend + backend sekaligus
+# 3) Edit server/.env sesuai database lokal kamu
+# DATABASE_URL=mysql://DB_USER:DB_PASSWORD@DB_HOST:3306/DB_NAME
+
+# 4) Jalankan migrasi/schema
+npm run migrate
+
+# 5) Isi data demo
+npm run seed
+
+# 6) Jalankan backend + frontend dev
 npm run dev
 ```
 
-Buka:
-- Frontend: http://localhost:3000
-- Backend:  http://localhost:4000/api/health
+Default lokal:
 
-Backend akan otomatis:
-- membuat tabel kalau belum ada (auto-migrate)
-- menyiapkan akun demo (idempotent):
-  - admin: `admin@demo.id` / `admin123`
-  - guru:  `guru@demo.id`  / `guru123`
+- Frontend dev: `http://localhost:5173`
+- Backend API: `http://localhost:4000`
+- Health check: `http://localhost:4000/api/health`
 
-## Scripts
+## Environment
 
-| Perintah | Fungsi |
-|---|---|
-| `npm install` | Install deps di root, server, & web |
-| `npm run dev` | Jalankan backend (4000) + frontend (3000) bersamaan |
-| `npm run dev:server` | Jalankan backend saja |
-| `npm run dev:web` | Jalankan frontend saja |
-| `npm run build` | Build backend & frontend ke `dist/` |
-| `npm run start` | Jalankan backend (mode prod) |
-| `npm run migrate` | Pastikan schema MySQL ada |
-| `npm run seed` | Tambah data demo (idempotent) |
+### Root `.env.example`
 
-## Konfigurasi Backend (`server/.env`)
+File `.env.example` di root hanya template gabungan agar mudah dibaca. Untuk runtime, gunakan file di folder masing-masing.
 
-```
+### Server `server/.env`
+
+Contoh aman ada di `server/.env.example`:
+
+```env
+NODE_ENV=development
 PORT=4000
-DATABASE_URL=mysql://USER:PASSWORD@HOST:3306/DBNAME
-JWT_SECRET=ganti-dengan-secret-acak
-CORS_ORIGIN=https://nama-project.vercel.app
+DATABASE_URL=mysql://DB_USER:DB_PASSWORD@DB_HOST:3306/DB_NAME
+JWT_SECRET=CHANGE_ME_USE_LONG_RANDOM_SECRET
+CORS_ORIGIN=http://localhost:5173
 ```
 
-## Konfigurasi Frontend (`web/.env`)
+### Web `web/.env`
 
-```
+Contoh aman ada di `web/.env.example`:
+
+```env
 VITE_API_BASE=http://localhost:4000
 ```
 
-## Deploy ke Vercel
+Untuk production dengan frontend dan backend satu origin/proxy, `VITE_API_BASE` bisa dikosongkan atau disesuaikan.
 
-Proyek ini terdiri dari **dua bagian terpisah** yang di-deploy ke Vercel.
+## Database Demo SQL
 
-### 1. Deploy Frontend (Web)
+Export database demo tersedia di:
 
-Frontend adalah Vite + React — deploy folder `web/` sebagai static site.
-
-**Langkah:**
-
-1. Push repo ke GitHub / GitLab / Bitbucket
-2. Buka [vercel.com](https://vercel.com) → **Add New Project** → Import repo
-3. Atur konfigurasi berikut di Vercel:
-
-| Setting | Value |
-|---|---|
-| **Framework Preset** | Vite |
-| **Root Directory** | `web` |
-| **Build Command** | `npm run build` |
-| **Output Directory** | `dist` |
-| **Install Command** | `npm install` |
-
-4. Tambahkan **Environment Variable**:
-
-```
-VITE_API_BASE=https://url-backend-kamu.vercel.app
+```text
+database/taka-school-demo.sql
 ```
 
-5. Klik **Deploy** ✅
+Import contoh:
 
----
-
-### 2. Deploy Backend (Server) ke Vercel Serverless
-
-Buat file `vercel.json` di **root** folder proyek:
-
-```json
-{
-  "version": 2,
-  "builds": [
-    {
-      "src": "server/src/index.ts",
-      "use": "@vercel/node"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "server/src/index.ts"
-    },
-    {
-      "src": "/uploads/(.*)",
-      "dest": "server/src/index.ts"
-    }
-  ]
-}
+```bash
+mysql -u DB_USER -p -e "CREATE DATABASE IF NOT EXISTS \`taka-school-demo\`;"
+mysql -u DB_USER -p taka-school-demo < database/taka-school-demo.sql
 ```
 
-Tambahkan **Environment Variables** di Vercel dashboard (project backend):
+> File SQL ini berisi data demo. Jangan commit dump database produksi yang berisi data asli/sensitif.
 
+## Scripts
+
+```bash
+npm install       # Install dependency root, server, dan web
+npm run dev       # Jalankan server + web dev bersamaan
+npm run dev:server
+npm run dev:web
+npm run build     # Build server + web
+npm run start     # Start server production dari root
+npm run migrate   # Jalankan auto-migrate schema
+npm run seed      # Isi/update data demo idempotent
 ```
-DATABASE_URL=mysql://USER:PASSWORD@HOST:3306/DBNAME
-JWT_SECRET=secret-acak-yang-kuat
-CORS_ORIGIN=https://nama-frontend.vercel.app
-PORT=4000
-```
 
-> ⚠️ **Catatan:**
-> - Vercel Serverless **tidak mendukung file upload persisten**. Untuk fitur galeri/foto, gunakan **Cloudinary** atau **AWS S3**.
-> - Gunakan MySQL cloud: **Railway**, **Aiven**, atau **PlanetScale**.
+## Routes Frontend Penting
 
----
-
-### Rekomendasi Stack Cloud Gratis
-
-| Komponen | Layanan |
-|---|---|
-| Frontend | Vercel (gratis) |
-| Backend API | Vercel Serverless / Railway |
-| Database MySQL | Railway / Aiven / PlanetScale |
-| File Upload | Cloudinary (gratis 25 GB) |
-
----
-
-## Routes
-
-Frontend:
 - `/` — Landing page publik
-- `/login` — Login admin / guru
-- `/dashboard` — Dashboard (perlu login)
+- `/login` — Login admin/guru
+- `/dashboard` — Dashboard analytics
+- `/siswa` — Manajemen siswa
+- `/guru` — Manajemen guru
+- `/kelas` — Manajemen kelas
+- `/absensi` — Absensi
+- `/spp` — Pembayaran SPP
+- `/spp/baru` — Tagihan SPP manual
+- `/spp/generate` — Generate tagihan SPP
+- `/ppdb` — Form PPDB publik
+- `/admissions` — Manajemen pendaftar PPDB
+- `/akademik` — Akademik
+- `/rapor` — Rapor
+- `/pengumuman` — Pengumuman
+- `/jadwal` — Jadwal
+- `/galeri` — Galeri
+- `/portal` — Portal publik
+- `/import-export` — Import/export data
 
-Backend:
-- `GET  /api/health`
+## API Backend Penting
+
+- `GET /api/health`
 - `POST /api/auth/login`
-- `POST /api/auth/register-school`
-- `GET  /api/auth/me`
-- `GET  /api/stats/dashboard`
+- `GET /api/auth/me`
+- `GET /api/stats/dashboard`
+- `GET /api/students`
+- `GET /api/teachers`
+- `GET /api/classes`
+- `GET /api/admissions`
+- `POST /api/admissions`
+- `GET /api/maps/search?q=...`
+- `GET /api/maps/reverse?lat=...&lon=...`
+- `GET /api/spp`
+- `GET /api/spp/:id`
+- `POST /api/spp`
+- `POST /api/spp/generate`
+- `PUT /api/spp/:id`
+- `DELETE /api/spp/:id`
 
 ## Stack
 
-| Layer | Tech |
-|---|---|
-| Frontend | React 19, Vite, Tailwind CSS 3, React Router |
-| Backend | Express, TypeScript, mysql2, bcryptjs, jsonwebtoken, zod |
-| DB | MySQL 8 |
+- Frontend: React 19, Vite, TypeScript, Tailwind CSS, React Router, Leaflet
+- Backend: Express, TypeScript, MySQL2, bcryptjs, jsonwebtoken, zod
+- Database: MySQL 8
+- Maps: OpenStreetMap/Nominatim + Leaflet
+- Deployment saat ini: systemd user service di port `3000`
+
+## Production Notes
+
+- Jangan commit `.env`, `.env.local`, kredensial database, JWT secret, atau token.
+- `.hermes/` sudah masuk `.gitignore`.
+- Production wajib memakai `JWT_SECRET` kuat.
+- Production tidak boleh memakai `CORS_ORIGIN=*`.
+- Jika memakai upload file secara serius, gunakan storage persisten seperti S3/Cloudinary, bukan filesystem ephemeral.
+- Untuk reverse proxy/domain, arahkan ke service Taka School port `3000`.
