@@ -18,6 +18,9 @@ type NavItem = {
 }
 
 const GROUPS: NavGroup[] = ["Utama", "Master Data", "Operasional", "Keuangan", "Publikasi", "Sistem"]
+const SIDEBAR_SCROLL_KEY = "takaschool.sidebar.scrollTop"
+let persistedSidebarScroll = 0
+let suppressSidebarSaveUntil = 0
 
 const NAV: NavItem[] = [
   { to: "/dashboard", label: "Dashboard", icon: "M3 12l9-9 9 9M5 10v10h14V10", group: "Utama", mobile: true },
@@ -44,19 +47,26 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation()
   const [open, setOpen] = useState(false)
   const navRef = useRef<HTMLElement>(null)
-  const sidebarScrollRef = useRef(0)
+  useLayoutEffect(() => {
+    const nav = navRef.current
+    if (!nav) return
+    const stored = Number(window.sessionStorage.getItem(SIDEBAR_SCROLL_KEY) || persistedSidebarScroll || 0)
+    nav.scrollTop = Number.isFinite(stored) ? stored : 0
+  }, [])
 
   useLayoutEffect(() => {
     const nav = navRef.current
     if (!nav) return
-    const restore = () => {
-      nav.scrollTop = sidebarScrollRef.current
-    }
+    const stored = Number(window.sessionStorage.getItem(SIDEBAR_SCROLL_KEY) || persistedSidebarScroll || 0)
+    const target = Number.isFinite(stored) ? stored : 0
+    const restore = () => { nav.scrollTop = target }
     restore()
-    const raf = requestAnimationFrame(restore)
-    const timer = window.setTimeout(restore, 80)
+    const raf1 = requestAnimationFrame(restore)
+    const raf2 = requestAnimationFrame(() => requestAnimationFrame(restore))
+    const timer = window.setTimeout(restore, 160)
     return () => {
-      cancelAnimationFrame(raf)
+      cancelAnimationFrame(raf1)
+      cancelAnimationFrame(raf2)
       window.clearTimeout(timer)
     }
   }, [location.pathname])
@@ -64,9 +74,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const nav = navRef.current
     if (!nav) return
-    const saveScroll = () => { sidebarScrollRef.current = nav.scrollTop }
+    const saveScroll = () => {
+      if (Date.now() < suppressSidebarSaveUntil) return
+      persistedSidebarScroll = nav.scrollTop
+      window.sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(nav.scrollTop))
+    }
     nav.addEventListener("scroll", saveScroll, { passive: true })
-    return () => nav.removeEventListener("scroll", saveScroll)
+    window.addEventListener("beforeunload", saveScroll)
+    return () => {
+      nav.removeEventListener("scroll", saveScroll)
+      window.removeEventListener("beforeunload", saveScroll)
+    }
   }, [])
 
   if (!user) return null
@@ -74,7 +92,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const visible = NAV.filter((n) => !n.show || n.show(user.role))
 
   function rememberSidebarScroll() {
-    if (navRef.current) sidebarScrollRef.current = navRef.current.scrollTop
+    if (!navRef.current) return
+    persistedSidebarScroll = navRef.current.scrollTop
+    suppressSidebarSaveUntil = Date.now() + 800
+    window.sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(navRef.current.scrollTop))
   }
 
   function closeMobileMenu() {
@@ -94,7 +115,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           open ? "translate-x-0" : "-translate-x-full"
         } lg:translate-x-0`}
       >
-        <div className="h-14 flex items-center justify-between gap-3 px-5 border-b border-slate-100 dark:border-slate-800">
+        <div className="h-16 flex items-center justify-between gap-3 px-5 border-b border-slate-100 dark:border-slate-800">
           <Link to="/dashboard" onClick={closeMobileMenu}>
             <Logo />
           </Link>
@@ -109,13 +130,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </svg>
           </button>
         </div>
-        <nav ref={navRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-2 pb-6 overscroll-contain">
+        <nav ref={navRef} className="flex-1 min-h-0 overflow-y-auto px-3 py-4 pb-8 overscroll-contain">
           {GROUPS.map((group) => {
             const items = visible.filter((n) => n.group === group)
             if (items.length === 0) return null
             return (
-              <div key={group} className="mb-2.5 last:mb-0">
-                <div className="px-3 pb-1 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400 dark:text-slate-500">
+              <div key={group} className="mb-5 last:mb-0">
+                <div className="px-3 pb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-slate-400 dark:text-slate-500">
                   {group}
                 </div>
                 <div className="space-y-1">
@@ -123,10 +144,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <NavLink
                       key={n.to}
                       to={n.to}
+                      onMouseDown={(e) => e.preventDefault()}
                       onClick={closeMobileMenu}
                       end={n.to === "/dashboard"}
                       className={({ isActive }) =>
-                        `flex items-center gap-3 px-3 py-1.5 rounded-lg text-sm font-medium transition ${
+                        `flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition ${
                           isActive
                             ? "bg-primary-50 text-primary-700 dark:bg-primary-500/15 dark:text-primary-300"
                             : "text-slate-600 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-800"
