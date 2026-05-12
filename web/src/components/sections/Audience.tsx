@@ -1,21 +1,22 @@
 const audiences = [
-  { emoji: "🧒", title: "PAUD", desc: "Kelola data anak usia dini & rapor capaian perkembangan." },
-  { emoji: "🎒", title: "TK", desc: "Absensi mudah, jadwal aktivitas, dan galeri kegiatan." },
-  { emoji: "📚", title: "SD Kecil", desc: "Cocok untuk SD swasta kecil dengan 1–6 kelas." },
-  { emoji: "✏️", title: "Bimbel", desc: "Catat kehadiran, jadwal kelas, dan tagihan biaya bulanan." },
-  { emoji: "🕌", title: "TPA / Madrasah", desc: "Manajemen santri, jadwal mengaji, dan iuran." },
-  { emoji: "🎨", title: "Sanggar / Kursus", desc: "Track murid, jadwal latihan, dan pembayaran." },
+  { emoji: "🧒", title: "PAUD", desc: "Data anak usia dini, absensi, galeri kegiatan, dan rapor perkembangan." },
+  { emoji: "🎒", title: "TK", desc: "Jadwal aktivitas, komunikasi wali murid, dan dokumentasi kegiatan harian." },
+  { emoji: "📚", title: "SD", desc: "Kelola kelas 1–6, absensi, SPP, pengumuman, jadwal, dan rapor siswa." },
+  { emoji: "🧪", title: "SMP", desc: "Manajemen siswa, guru mapel, kelas, pembayaran, dan laporan akademik." },
+  { emoji: "🎓", title: "SMA", desc: "Siap untuk kelas X–XII, jurusan IPA/IPS/Bahasa, PPDB, SPP, dan rapor." },
+  { emoji: "🏫", title: "Sekolah Multi-Jenjang", desc: "Satu aplikasi untuk yayasan yang punya PAUD, TK, SD, SMP, dan SMA sekaligus." },
 ]
 
 export default function Audience() {
   return (
     <section id="cocok" className="section bg-slate-50 dark:bg-slate-900/40">
       <div className="max-w-7xl mx-auto container-px">
-        <div className="text-center max-w-2xl mx-auto">
+        <div className="text-center max-w-3xl mx-auto">
           <span className="eyebrow">Cocok Untuk</span>
-          <h2 className="section-title">Dirancang untuk lembaga skala kecil</h2>
+          <h2 className="section-title">Fleksibel untuk PAUD sampai SMA</h2>
           <p className="section-sub mx-auto">
-            Sesuai untuk lembaga dengan ~10 sampai 500 siswa.
+            Taka School sudah diarahkan untuk sekolah multi-jenjang: mulai data siswa, guru, kelas,
+            PPDB, absensi, SPP, rapor, sampai dashboard analytics.
           </p>
         </div>
 
