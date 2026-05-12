@@ -162,10 +162,23 @@ export async function ensureDemoData() {
   }
 
   const studentRows: Array<{ id: number; classId: number; index: number; name: string }> = []
+  const usedNames = new Set<string>()
   for (let i = 0; i < 315; i += 1) {
     const klass = classIds[i % classIds.length]
     const gender: Gender = i % 2 === 0 ? "L" : "P"
-    const name = `${pick(gender === "L" ? maleFirst : femaleFirst, i)} ${pick(lastNames, i)} ${pick(lastNames, i + 7)}`
+    
+    // Generate unique name by combining different offsets
+    let name = ""
+    let attempts = 0
+    do {
+      const firstIdx = (i * 7 + attempts * 3) % (gender === "L" ? maleFirst.length : femaleFirst.length)
+      const lastIdx1 = (i * 11 + attempts * 5) % lastNames.length
+      const lastIdx2 = (i * 13 + attempts * 7 + 17) % lastNames.length
+      name = `${pick(gender === "L" ? maleFirst : femaleFirst, firstIdx)} ${pick(lastNames, lastIdx1)} ${pick(lastNames, lastIdx2)}`
+      attempts++
+    } while (usedNames.has(name) && attempts < 50)
+    usedNames.add(name)
+    
     const parentName = gender === "L" ? pick(fatherNames, i) : pick(motherNames, i)
     const birthYear = klass.grade === "10" ? 2010 : klass.grade === "11" ? 2009 : 2008
     const id = await insert(
