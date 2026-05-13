@@ -52,8 +52,16 @@ router.post("/login", rateLimit({ keyPrefix: "auth-login", limit: 5, windowMs: 5
     email: u.email,
   })
 
+  // Set HttpOnly cookie for security
+  res.cookie("takaschool_token", token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+  })
+
   res.json({
-    token,
+    token, // Keep for backward compatibility during migration
     user: {
       id: u.id,
       name: u.name,
@@ -112,8 +120,16 @@ router.post("/register-school", rateLimit({ keyPrefix: "auth-register-school", l
       email,
     })
 
+    // Set HttpOnly cookie for security
+    res.cookie("takaschool_token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+    })
+
     res.status(201).json({
-      token,
+      token, // Keep for backward compatibility during migration
       user: {
         id: userRes.insertId,
         name: adminName,
@@ -147,6 +163,15 @@ router.get("/me", requireAuth(), async (req, res) => {
     schoolId: u.school_id,
     schoolName: u.school_name,
   })
+})
+
+router.post("/logout", (req, res) => {
+  res.clearCookie("takaschool_token", {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+  })
+  res.json({ message: "Logged out successfully" })
 })
 
 export default router

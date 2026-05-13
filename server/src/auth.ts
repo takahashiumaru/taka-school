@@ -41,11 +41,13 @@ export function normalizeRole(role: unknown): Role {
 
 export function requireAuth(roles?: Role[]) {
   return (req: Request, res: Response, next: NextFunction) => {
+    // Try cookie first (HttpOnly), then headers (backward compatibility)
+    const cookieToken = req.cookies?.takaschool_token
     const headerToken = req.headers["x-auth-token"]
     const xToken = Array.isArray(headerToken) ? headerToken[0] : headerToken
     const auth = req.headers.authorization || ""
     const bearer = auth.startsWith("Bearer ") ? auth.slice(7) : null
-    const token = xToken || bearer
+    const token = cookieToken || xToken || bearer
     if (!token) return res.status(401).json({ error: "Unauthorized" })
     try {
       const decoded = jwt.verify(token, SECRET) as AuthUser
