@@ -48,7 +48,7 @@ export default function DatePicker({ value, onChange, className = "", placeholde
         <svg viewBox="0 0 20 20" className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 8l5 5 5-5" /></svg>
       </button>
       {open && (
-        <div className="absolute left-0 z-50 mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-white p-3 shadow-2xl ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
+        <div className="absolute left-0 z-[9999] mt-2 w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-white p-3 shadow-2xl ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
           <div className="flex items-center justify-between">
             <button type="button" onClick={() => moveMonth(-1)} className="h-9 w-9 rounded-xl text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800">‹</button>
             <div className="text-sm font-bold text-slate-900 dark:text-slate-100">{MONTHS[view.getMonth()]} {view.getFullYear()}</div>

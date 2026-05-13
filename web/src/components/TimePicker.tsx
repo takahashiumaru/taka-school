@@ -62,7 +62,7 @@ export default function TimePicker({ value, onChange, className = "", placeholde
         <svg viewBox="0 0 20 20" className={`h-4 w-4 shrink-0 text-slate-400 transition-transform ${open ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M5 8l5 5 5-5" /></svg>
       </button>
       {open && (
-        <div className="absolute left-0 z-50 mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-white/95 p-3 shadow-2xl ring-1 ring-slate-200 backdrop-blur dark:bg-slate-900/95 dark:ring-slate-700">
+        <div className="absolute left-0 z-[9999] mt-2 w-72 max-w-[calc(100vw-2rem)] rounded-2xl bg-white/95 p-3 shadow-2xl ring-1 ring-slate-200 backdrop-blur dark:bg-slate-900/95 dark:ring-slate-700">
           <div className="mb-3 flex items-center justify-between">
             <div>
               <div className="text-xs font-semibold uppercase tracking-wide text-slate-400">Pilih waktu</div>
