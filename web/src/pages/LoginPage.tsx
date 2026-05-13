@@ -97,27 +97,29 @@ export default function LoginPage() {
             ))}
           </div>
 
-          <div className="mt-3 rounded-xl bg-primary-50 ring-1 ring-primary-100 px-4 py-3 text-sm text-primary-800 dark:bg-primary-500/10 dark:ring-primary-500/30 dark:text-primary-200">
-            <div className="font-semibold">Akun demo:</div>
-            <div className="mt-1 grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => fillDemo("admin")}
-                className="text-left rounded-lg bg-white px-2 py-1.5 ring-1 ring-primary-100 hover:bg-primary-100 dark:bg-slate-900 dark:ring-primary-500/40 dark:hover:bg-primary-500/15"
-              >
-                <div className="font-semibold">Admin</div>
-                <div className="text-slate-600 dark:text-slate-400">admin@takaschool-demo.id / demo12345</div>
-              </button>
-              <button
-                type="button"
-                onClick={() => fillDemo("guru")}
-                className="text-left rounded-lg bg-white px-2 py-1.5 ring-1 ring-primary-100 hover:bg-primary-100 dark:bg-slate-900 dark:ring-primary-500/40 dark:hover:bg-primary-500/15"
-              >
-                <div className="font-semibold">Guru</div>
-                <div className="text-slate-600 dark:text-slate-400">bu.siti.kurniawan@takaschool-demo.id / demo12345</div>
-              </button>
+          {import.meta.env.VITE_SHOW_DEMO_LOGIN !== "false" && (
+            <div className="mt-3 rounded-xl bg-primary-50 ring-1 ring-primary-100 px-4 py-3 text-sm text-primary-800 dark:bg-primary-500/10 dark:ring-primary-500/30 dark:text-primary-200">
+              <div className="font-semibold">Akun demo:</div>
+              <div className="mt-1 grid grid-cols-2 gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => fillDemo("admin")}
+                  className="text-left rounded-lg bg-white px-2 py-1.5 ring-1 ring-primary-100 hover:bg-primary-100 dark:bg-slate-900 dark:ring-primary-500/40 dark:hover:bg-primary-500/15"
+                >
+                  <div className="font-semibold">Admin</div>
+                  <div className="text-slate-600 dark:text-slate-400">admin@takaschool-demo.id / demo12345</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fillDemo("guru")}
+                  className="text-left rounded-lg bg-white px-2 py-1.5 ring-1 ring-primary-100 hover:bg-primary-100 dark:bg-slate-900 dark:ring-primary-500/40 dark:hover:bg-primary-500/15"
+                >
+                  <div className="font-semibold">Guru</div>
+                  <div className="text-slate-600 dark:text-slate-400">bu.siti.kurniawan@takaschool-demo.id / demo12345</div>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <form onSubmit={handleSubmit} className="mt-5 space-y-4">
             <div>
